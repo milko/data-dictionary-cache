@@ -1,0 +1,96 @@
+{
+    "name": "TestCacheValidation",
+    "version": "0.0.0",
+    "description": "Test cache and validation services.",
+    "engines": {
+        "arangodb": "^3.0.0"
+    },
+    "author": "Milko Skofic",
+    "license": "Apache 2",
+    "main": "main.js",
+    "scripts": {
+        "setup": "scripts/setup.js",
+        "teardown": "scripts/teardown.js"
+    },
+    "configuration": {
+        "language": {
+            "description": "Default language ISO code.",
+            "type": "string",
+            "required": true,
+            "default": "iso_639_3_eng"
+        },
+        "collectionTerm": {
+            "description": "Terms collection name",
+            "type": "string",
+            "required": true,
+            "default": "terms"
+        },
+        "collectionEdge": {
+            "description": "Edges collection name",
+            "type": "string",
+            "required": true,
+            "default": "edges"
+        },
+        "collectionLink": {
+            "description": "Links collection name",
+            "type": "string",
+            "required": true,
+            "default": "links"
+        },
+        "collectionTopo": {
+            "description": "Topography collection name",
+            "type": "string",
+            "required": true,
+            "default": "topos"
+        },
+        "viewTerm": {
+            "description": "Term view name",
+            "type": "string",
+            "required": true,
+            "default": "VIEW_TERM"
+        },
+        "sectionCode": {
+            "description": "Term codes section name",
+            "type": "string",
+            "required": true,
+            "default": "_code"
+        },
+        "sectionInfo": {
+            "description": "Term information section name",
+            "type": "string",
+            "required": true,
+            "default": "_info"
+        },
+        "sectionData": {
+            "description": "Term data section name",
+            "type": "string",
+            "required": true,
+            "default": "_data"
+        },
+        "sectionRule": {
+            "description": "Term rules section name",
+            "type": "string",
+            "required": true,
+            "default": "_rule"
+        },
+        "sectionPath": {
+            "description": "Term edge path section",
+            "type": "string",
+            "required": true,
+            "default": "_path"
+        },
+        "predicate": {
+            "description": "Predicate descriptor",
+            "type": "string",
+            "required": true,
+            "default": "_predicate"
+        },
+        "predicateEnumeration": {
+            "description": "Enumeration predicate",
+            "type": "string",
+            "required": true,
+            "default": "_predicate_enum-of"
+        }
+    },
+    "tests": "test/**/*.js"
+}
