@@ -104,7 +104,9 @@ class TermsCache
                   FOR doc IN ${collection_edges}
                     FILTER doc._from == CONCAT_SEPARATOR('/', ${module.context.configuration.collectionTerm}, ${theTermGID})
                     FILTER doc.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
-                  RETURN UNIQUE(FLATTEN(doc.${module.context.configuration.sectionPath}))[ 0 ]
+
+                    FOR item IN doc.${module.context.configuration.sectionPath}
+                        RETURN PARSE_KEY(item)
                 )
                 RETURN
                     (LENGTH(path) > 0) ? { ${module.context.configuration.sectionPath}: path }
