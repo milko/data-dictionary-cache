@@ -3,11 +3,11 @@
 /**
  * TermsCache.js
  *
- * This file contains code to provide an interface to the data dictionary
- * database. It is a class that can be used to interrogate the data dictionary
- * database caching all queried terms, to prevent hitting yje database.
+ * This file contains the TermsCache class which implements a data dictionary
+ * database cache and interface for accessing terms.
  *
- * This cache is implemented as a class.
+ * All names are defined in the service settings, except default names, such as
+ * the document key in ArangoDB, _key.
  */
 
 /**
@@ -62,13 +62,16 @@ class TermsCache
      *
      * If the term exists in the cache, the method will return that record.
      * If the term does not exist in the cache, the method will look for a
-     * matching term in the database. If the term exists, the dictionary will
-     * receive an entry indexed by the provided global identifier containing the
-     * term's record `_code`, `_data` and `_rule` sections plus the eventual
-     * `_path` section of a matching enumeration.
+     * matching term in the database.
+     * If the term exists, the dictionary will receive an entry, indexed by the
+     * provided global identifier, containing the term's record `_code`, `_data`
+     * and `_rule` sections plus the eventual `_path` section if the term is an
+     * enumeration element.
      * If the term does not exist in the database, the cache will be set with an
-     * entry valueof `false`, signalling a missing term and to prevent
+     * entry value of `false`, signalling a missing term; this to prevent
      * unnecessary reads.
+     *
+     * The method assumes the parameter to be a string.
      *
      * @param theTermGID {String}: The term global identifier.
      * @return {Object}: The term record or `false` if the term does not exist.
@@ -90,7 +93,7 @@ class TermsCache
               FOR doc IN ${collection_terms}
                 FILTER doc._key == ${theTermGID}
               RETURN KEEP(doc,
-                "_key",
+                ${module.context.configuration.sectionCode},
                 ${module.context.configuration.sectionData},
                 ${module.context.configuration.sectionRule}
               )
@@ -124,27 +127,28 @@ class TermsCache
     /**
      * getTerms
      *
-     * This method will return the terms corresponding to the provided
-     * global identifiers list.
+     * This method will return the list of term records corresponding to the
+     * provided list of term global identifiers.
+     * The result will be a key/value dictionary in which each element will be
+     * the result of the `getTerm()` method applied to the current element.
      *
-     * If the term exists in the cache, the method will return that record.
-     * If the term does not exist in the cache, the method will look for a
-     * matching term in the database. If the term exists, the dictionary will
-     * receive an entry indexed by the provided global identifier containing the
-     * term's record `_code`, `_data` and `_rule` sections plus the eventual
-     * `_path` section of a matching enumeration.
-     * If the term does not exist in the database, the cache will be set with an
-     * entry valueof `false`, signalling a missing term and to prevent
-     * unnecessary reads.
+     * The method assumes the parameter to be an array of strings. If there are
+     * eventual duplicates in the string array, these will be reduces to a set.
      *
-     * @param theTermsGID {Array}: The term global identifiers list.
-     * @return {Array}: List of term records or `false` for missing terms.
+     * @param TheTermGIDList {[String]}: The term global identifiers list.
+     * @return {Object}: Dictionary of matched terms..
      */
-    getTerms(theTermsGID)
+    getTerms(TheTermGIDList)
     {
-        return theTermsGID.map(term => {
-            return {[term]: this.getTerm(term)}
-        })                                                              // ==>
+        ///
+        // Iterate list of term identifiers.
+        ///
+        const result = {}
+        TheTermGIDList.forEach(term => {
+            result[term] = this.getTerm(term)
+        })
+
+        return result                                                   // ==>
 
     } // getTerms()
 
