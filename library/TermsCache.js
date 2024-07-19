@@ -100,10 +100,15 @@ class TermsCache
             )
             
             LET enum = (
-              FOR doc IN ${collection_edges}
-                FILTER doc._from == CONCAT_SEPARATOR('/', ${module.context.configuration.collectionTerm}, ${theTermGID})
-                FILTER doc.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
-              RETURN KEEP(doc, ${module.context.configuration.sectionPath})
+                LET path = (
+                  FOR doc IN ${collection_edges}
+                    FILTER doc._from == CONCAT_SEPARATOR('/', ${module.context.configuration.collectionTerm}, ${theTermGID})
+                    FILTER doc.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
+                  RETURN UNIQUE(FLATTEN(doc.${module.context.configuration.sectionPath}))[ 0 ]
+                )
+                RETURN
+                    (LENGTH(path) > 0) ? { ${module.context.configuration.sectionPath}: path }
+                                       : {}
             )
             
             RETURN
