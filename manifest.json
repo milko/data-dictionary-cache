@@ -90,6 +90,24 @@
             "type": "string",
             "required": true,
             "default": "_predicate_enum-of"
+        },
+        "localIdentifier": {
+            "description": "Local identifier",
+            "type": "string",
+            "required": true,
+            "default": "_lid"
+        },
+        "officialIdentifiers": {
+            "description": "List of official identifiers",
+            "type": "string",
+            "required": true,
+            "default": "_aid"
+        },
+        "providerIdentifiers": {
+            "description": "List of provider identifiers",
+            "type": "string",
+            "required": true,
+            "default": "_aid"
         }
     },
     "tests": "test/**/*.js"

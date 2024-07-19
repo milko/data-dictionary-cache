@@ -25,12 +25,14 @@ router.tag('test')
 /**
  * Test TermsCache::getTerm()
  */
-router.get(function (req, res){
+router.get(
+    'getTerm',
+    function (req, res){
 
-  const key = req.queryParams.GID
-  res.send(Cache.getTerm(key))
+      const key = req.queryParams.GID
+      res.send(Cache.getTerm(key))
 
-}, 'getTerm')
+    }, 'getTerm')
     .summary('Test getTerm()')
     .description(dd`Retrieves term record from cache or database.`)
     .queryParam(
@@ -46,12 +48,14 @@ router.get(function (req, res){
 /**
  * Test TermsCache::getTerms()
  */
-router.post(function (req, res){
+router.post(
+    'getTerms',
+    function (req, res){
 
-  const keys = req.body
-  res.send(Cache.getTerms(keys))
+      const keys = req.body
+      res.send(Cache.getTerms(keys))
 
-}, 'getTerms')
+    }, 'getTerms')
     .summary('Test getTerms()')
     .description(dd`Retrieves list of term records from cache or database.`)
     .body(
@@ -61,4 +65,94 @@ router.post(function (req, res){
     .response(
         joi.object(),
         'key/value dictionary where key is term global identifier and value is term record.'
+    )
+
+/**
+ * Test TermsCache::getEnumByLID()
+ */
+router.get(
+    'getEnumByLID',
+    function (req, res){
+
+      const code = req.queryParams.code
+      const type = req.queryParams.type
+
+      res.send(Cache.getEnumByLID(code, type))
+
+    }, 'getEnumByLID')
+    .summary('Test getEnumByLID()')
+    .description(dd`Retrieve enumeration term global identifier given local identifier and enumeration path.`)
+    .queryParam(
+        'code',
+        joi.string().required(),
+        "Term local identifier"
+    )
+    .queryParam(
+        'type',
+        joi.string().required(),
+        "Enumeration type global identifier"
+    )
+    .response(
+        joi.array(),
+        'List of matching term global identifiers.'
+    )
+
+/**
+ * Test TermsCache::getEnumByAID()
+ */
+router.get(
+    'getEnumByAID',
+    function (req, res){
+
+      const code = req.queryParams.code
+      const type = req.queryParams.type
+
+      res.send(Cache.getEnumByAID(code, type))
+
+    }, 'getEnumByAID')
+    .summary('Test getEnumByAID()')
+    .description(dd`Retrieve enumeration term global identifier given official identifier and enumeration path.`)
+    .queryParam(
+        'code',
+        joi.string().required(),
+        "Term official identifier"
+    )
+    .queryParam(
+        'type',
+        joi.string().required(),
+        "Enumeration type global identifier"
+    )
+    .response(
+        joi.array(),
+        'List of matching term global identifiers.'
+    )
+
+/**
+ * Test TermsCache::getEnumByPID()
+ */
+router.get(
+    'getEnumByPID',
+    function (req, res){
+
+      const code = req.queryParams.code
+      const type = req.queryParams.type
+
+      res.send(Cache.getEnumByAID(code, type))
+
+    }, 'getEnumByPID')
+    .summary('Test getEnumByPID()')
+    .description(dd`Retrieve enumeration term global identifier given provider identifier and enumeration path.`)
+    .queryParam(
+        'code',
+        joi.string().required(),
+        "Term provider identifier"
+    )
+    .queryParam(
+        'type',
+        joi.string().required(),
+        "Enumeration type global identifier"
+    )
+    .response(
+        joi.array(),
+        'List of matching term global identifiers.'
     )
