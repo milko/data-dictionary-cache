@@ -30,7 +30,10 @@ const view_terms = {
 
 
 /**
- * Class: Database
+ * Class: TermsCache
+ *
+ * This class functions as an interface between the database and the caller,
+ * in which all term queries are cached in order to minimise database access.
  */
 class TermsCache
 {

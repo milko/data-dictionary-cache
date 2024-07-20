@@ -11,6 +11,7 @@ const createRouter = require('@arangodb/foxx/router')
 // Cache.
 ///
 const TermCache = require('../library/TermsCache')
+const ValidationReport = require("../library/ValidationReport");
 const Cache = new TermCache()
 
 
@@ -134,10 +135,10 @@ router.get(
     'getEnumByPID',
     function (req, res){
 
-      const code = req.queryParams.code
-      const type = req.queryParams.type
+        const code = req.queryParams.code
+        const type = req.queryParams.type
 
-      res.send(Cache.getEnumByAID(code, type))
+        res.send(Cache.getEnumByAID(code, type))
 
     }, 'getEnumByPID')
     .summary('Test getEnumByPID()')
@@ -155,4 +156,36 @@ router.get(
     .response(
         joi.array(),
         'List of matching term global identifiers.'
+    )
+
+/**
+ * Test TermsCache::getEnumByPID()
+ */
+router.get(
+    'newValidationReport',
+    function (req, res){
+
+        const status = req.queryParams.status
+        const descriptor = req.queryParams.descriptor
+
+        const report = new ValidationReport(status, descriptor)
+
+        res.send(report)
+
+    }, 'new ValidationReport()')
+    .summary('Test ValidationReport()')
+    .description(dd`Create and inspect a validation report.`)
+    .queryParam(
+        'status',
+        joi.string().required(),
+        "Validation status ID"
+    )
+    .queryParam(
+        'descriptor',
+        joi.string().default(null),
+        "Descriptor global identifier"
+    )
+    .response(
+        joi.array(),
+        'ValidationStatus record.'
     )
