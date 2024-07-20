@@ -178,9 +178,7 @@ class TermsCache
      * path.
      *
      * The method should return a single element or no elements if there were no
-     * matches. If the method returns more than one element, it means that the
-     * enumerations graph structure is probably corrupt, this option should be
-     * handled by the caller.
+     * matches.
      *
      * Use this method when you expect enumeration local codes (local
      * identifiers) rather than full codes (global identifiers).
@@ -223,9 +221,7 @@ class TermsCache
      * path.
      *
      * The method should return a single element or no elements if there were no
-     * matches. If the method returns more than one element, it means that the
-     * enumerations graph structure is probably corrupt, this option should be
-     * handled by the caller.
+     * matches.
      *
      * Use this method when you expect enumeration official codes (official
      * identifiers) rather than full codes (global identifiers).
@@ -268,9 +264,7 @@ class TermsCache
      * path.
      *
      * The method should return a single element or no elements if there were no
-     * matches. If the method returns more than one element, it means that the
-     * enumerations graph structure is probably corrupt, this option should be
-     * handled by the caller.
+     * matches.
      *
      * Use this method when you expect enumeration provider codes (official
      * identifiers) rather than full codes (global identifiers).
@@ -314,11 +308,6 @@ class TermsCache
      * matching the value of the `theValue` parameter.
      * - The property referenced in the `theField` parameter can either be a
      * scalar or an array.
-     *
-     * The method should return a single element or no elements if there were no
-     * matches. If the method returns more than one element, it means that the
-     * enumerations graph structure is probably corrupt, this option should be
-     * handled by the caller.
      *
      * The cache is not consulted by this method.
      *
