@@ -33,14 +33,47 @@ const view_terms = {
  * Class: TermsCache
  *
  * This class functions as an interface between the database and the caller,
- * in which all term queries are cached in order to minimise database access.
+ * in which term queries can be cached in order to minimise database access.
+ *
+ * The class features a static `cache` member. When caching terms the class will
+ * check if there is an edge containing the term as the relationship origin with
+ * a predicate indicating that the term is an enumeration element: in that case
+ * the `_path` property of the edge will be copied in the term top level.
+ * Note that this cache is generally used for validation purposes, so stored
+ * terms will only feature the `_key`, `_data`, `_rule` and the `_path`
+ * properties, this to minimise the size of the cache.
+ *
+ * The class features a local `batch` member, this is a cache that isused to
+ * store terms and edges *before these are stored in the database*.
+ * We use this cache to perform validation on a series of terms and edges, and
+ * only submit the transaction if all elements are valid. The terms stored in
+ * this cache are expected to have all their components: after committing
+ * transactions these complete terms will be reduced to the same format as the
+ * cache and stored there.
+ * The fact that this member is not static means that each instance of this
+ * class will have its own batch cache version.
  */
 class TermsCache
 {
     ///
-    // Static members.
+    // Static cache.
     ///
     static cache = null
+
+    ///
+    // List of top level term properties to keep.
+    ///
+    static props = [
+        '_key',
+        module.context.configuration.sectionData,
+        module.context.configuration.sectionRule,
+        module.context.configuration.sectionPath
+    ]
+
+    ///
+    // Local batch cache.
+    ///
+    batch = {}
 
     /**
      * constructor
@@ -60,32 +93,60 @@ class TermsCache
     /**
      * getTerm
      *
-     * This method will return the term corresponding to the provided
-     * global identifier.
+     * This method can be used to retrieve a partial term record given the term
+     * identifier.
      *
-     * If the term exists in the cache, the method will return that record.
-     * If the term does not exist in the cache, the method will look for a
-     * matching term in the database.
-     * If the term exists, the dictionary will receive an entry, indexed by the
-     * provided global identifier, containing the term's record `_code`, `_data`
-     * and `_rule` sections plus the eventual `_path` section if the term is an
-     * enumeration element.
-     * If the term does not exist in the database, the cache will be set with an
-     * entry value of `false`, signalling a missing term; this to prevent
-     * unnecessary reads.
+     * The method expects the term global identifier in the `theTermGID`
+     * parameter.
      *
-     * The method assumes the parameter to be a string.
+     * The method features two flags: `doCache`, and `doBatch`.
+     * If `doCache` is true, the method will check if it can find the term in
+     * the cache, in that case it will return it. If the `doBatch` flag is set
+     * and the term was not found in the cache, the method will try to locate it
+     * in the batch cache: if found, the method will return the term record.
      *
-     * @param theTermGID {String}: The term global identifier.
+     * If the term cannot be found in either the cache or the batch cache, the
+     * method will query the database. If the term was found, it will be
+     * stripped of all top level properties, except `_key`, `_data` and `_rule`,
+     * and the method will check if an edge exists with the term as the `_from`
+     * property and the `_predicate_enum-of` as the predicate: in that case the
+     * `_path` property of the edge will be added to the term's top level. This
+     * is the record that will be returned by the method.
+     *
+     * If the term was retrieved from the database and the `doCache` flag is
+     * set, the record will be added to the cache.
+     *
+     * If the term was not found, the returned value will be `false`. If the
+     * `doMissing` flag is true in this situation, the method will also cache
+     * terms that were not found; note that the `doCache` flag should also be
+     * set in this case.
+     *
+     * @param theTermGID {String}: The term global identifier (`_key`).
+     * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
+     * @param doBatch {Boolean}: Check batch, defaults to `true`.
+     * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
+     *
      * @return {Object}: The term record or `false` if the term does not exist.
      */
-    getTerm(theTermGID)
-    {
+    getTerm(
+        theTermGID,
+        doCache = true,
+        doBatch = true,
+        doMissing = true
+    ){
         ///
         // Check cache.
         ///
-        if(TermsCache.cache.hasOwnProperty(theTermGID)) {
+        if(doCache && TermsCache.cache.hasOwnProperty(theTermGID)) {
             return TermsCache.cache[theTermGID]                         // ==>
+        }
+
+        ///
+        // Check batch.
+        // If batch is on and term is there, return it.
+        ///
+        if(doBatch && this.batch.hasOwnProperty(theTermGID)) {
+            return this.batch[theTermGID]                               // ==>
         }
 
         ///
@@ -96,7 +157,7 @@ class TermsCache
               FOR doc IN ${collection_terms}
                 FILTER doc._key == ${theTermGID}
               RETURN KEEP(doc,
-                ${module.context.configuration.sectionCode},
+                '_key',
                 ${module.context.configuration.sectionData},
                 ${module.context.configuration.sectionRule}
               )
@@ -109,7 +170,7 @@ class TermsCache
                     FILTER doc.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
 
                     FOR item IN doc.${module.context.configuration.sectionPath}
-                        RETURN PARSE_KEY(item)
+                        RETURN PARSE_IDENTIFIER(item).key
                 )
                 RETURN
                     (LENGTH(path) > 0) ? { ${module.context.configuration.sectionPath}: path }
@@ -124,13 +185,28 @@ class TermsCache
        `).toArray()
 
         ///
-        // Set cache.
+        // Process found term.
         ///
-        TermsCache.cache[theTermGID] = (result.length === 1)
-            ? result[ 0 ]
-            : false
+        if(result.length === 1)
+        {
+            ///
+            // Set in cache.
+            ///
+            if(doCache) {
+                TermsCache.cache[theTermGID] = result[ 0 ]
+            }
 
-        return TermsCache.cache[theTermGID]                             // ==>
+            return result[ 0 ]                                          // ==>
+        }
+
+        //
+        // Cache missing terms.
+        ///
+        if(doMissing) {
+            TermsCache.cache[theTermGID] = false
+        }
+
+        return false                                                    // ==>
 
     } // getTerm()
 
@@ -148,16 +224,24 @@ class TermsCache
      * The cache is consulted by this method.
      *
      * @param TheTermGIDList {[String]}: The term global identifiers list.
+     * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
+     * @param doBatch {Boolean}: Check batch, defaults to `true`.
+     * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
+     *
      * @return {Object}: Dictionary of matched terms..
      */
-    getTerms(TheTermGIDList)
-    {
+    getTerms(
+        TheTermGIDList,
+        doCache = true,
+        doBatch = true,
+        doMissing = true
+    ){
         ///
         // Iterate list of term identifiers.
         ///
         const result = {}
-        TheTermGIDList.forEach(term => {
-            result[term] = this.getTerm(term)
+        TheTermGIDList.forEach( (term) => {
+            result[term] = this.getTerm(term, doCache, doBatch, doMissing)
         })
 
         return result                                                   // ==>
@@ -336,7 +420,7 @@ class TermsCache
               FILTER edge._from IN terms
               FILTER edge.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
               FILTER CONCAT_SEPARATOR("/", ${module.context.configuration.collectionTerm}, ${theEnum}) IN edge.${module.context.configuration.sectionPath}
-            RETURN PARSE_KEY(edge._from)
+            RETURN PARSE_IDENTIFIER(edge._from).key
         `)                                                              // ==>
 
     } // getEnumGIDByCode()

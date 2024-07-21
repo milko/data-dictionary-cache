@@ -55,27 +55,41 @@ class ValidationStatus
 	 * The object can be initialised without parameters: it will instantiate an
 	 * idle status.
 	 *
+	 * If the provided status code cannot be found, the constructor will raise
+	 * and exception.
+	 *
 	 * @param theStatusCode {String}: The status code constant, default to `kIdle`.
 	 * @param theDefaultLanguage {string}: The default language for the status messages.
 	 */
 	constructor(
-		theStatusCode = 'kIdle',
+		theStatusCode = 'kOK',
 		theDefaultLanguage = module.context.configuration.language
 	){
 		///
+		// Check status code.
+		///
+		if(!ValidationStatus.statusRecords.hasOwnProperty(theStatusCode)) {
+			throw new Error(
+				`Accessing unknown status code: [${theStatusCode}].`
+			)                                                           // ==>
+		}
+
+		///
+		// Save status record.
+		///
+		const status = ValidationStatus.statusRecords[theStatusCode]
+
+		///
 		// Set status code.
 		///
-		this.statusCode =
-			ValidationStatus
-				.statusRecords[theStatusCode].statusCode
+		this.statusCode = status.statusCode
 
 		///
 		// Set status message.
 		///
-		this.statusMessage =
-			ValidationStatus
-				.statusRecords[theStatusCode]
-				.statusMessage[theDefaultLanguage]
+		this.statusMessage = (status.statusMessage.hasOwnProperty(theDefaultLanguage))
+						   ? status.statusMessage[theDefaultLanguage]
+						   : status.statusMessage[module.context.configuration.language]
 
 	} // constructor()
 
@@ -86,7 +100,7 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
-		"kIdle": {
+		"kOK": {
 			"statusCode": 0,
 			"statusMessage": {
 				"iso_639_3_eng": "Idle.",
