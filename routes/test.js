@@ -177,12 +177,12 @@ router.get(
     .description(dd`Create and inspect a validation report.`)
     .queryParam(
         'status',
-        joi.string().required(),
+        joi.string(),
         "Validation status ID"
     )
     .queryParam(
         'descriptor',
-        joi.string().default(null),
+        joi.string(),
         "Descriptor global identifier"
     )
     .response(

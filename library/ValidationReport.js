@@ -17,7 +17,7 @@
 class ValidationReport
 {
 	constructor(
-		theStatusCode = 'kIdle',
+		theStatusCode = 'kOK',
 		theDescriptor = ''
 	){
 		///
