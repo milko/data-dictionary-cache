@@ -248,153 +248,26 @@ class TermsCache
 
     } // getTerms()
 
-    /**
-     * getEnumByLID
-     *
-     * This method can be used to retrieve the global identifier of the term
-     * whose local identifier matches the provided `code` and is an enumeration
-     * element of the graph whose path matches the provided `type` parameter.
-     *
-     * The code provided in the `theCode` parameter must match the term local
-     * identifier (`_lid`). All edges featuring these matching terms as
-     * relationship sources (`_from`) will be selected and further trimmed by
-     * only selecting those edges whose paths list (`_path`) contain the
-     * enumeration type global identifier provided in the `theType`
-     * parameter. The method will return the global identifier of the term that
-     * holds the provided local identifier and belongs to the provided graph
-     * path.
-     *
-     * The method should return a single element or no elements if there were no
-     * matches.
-     *
-     * Use this method when you expect enumeration local codes (local
-     * identifiers) rather than full codes (global identifiers).
-     *
-     * The cache is not consulted by this method.
-     *
-     * @param theCode {String}: The enumeration local identifier.
-     * @param theType {String}: The enumeration type global identifier.
-     * @return {[String]}: The list of term global identifiers matching code and
-     * type.
-     */
-    getEnumByLID(theCode, theType)
-    {
-        ///
-        // Match terms matching code and edges matching path.
-        ///
-        return TermsCache.getEnumGIDByCode(
-            module.context.configuration.localIdentifier,
-            theCode,
-            theType
-        )                                                               // ==>
-
-    } // getEnumByLID()
-
-    /**
-     * getTermByAID
-     *
-     * This method can be used to retrieve the global identifier of the term
-     * whose official identifiers match the provided `code` and is an
-     * enumeration element of the graph whose path matches the provided `type`
-     * parameter.
-     *
-     * The code provided in the `theCode` parameter must match at least one of
-     * the term's official identifiers (`_aid`). All edges featuring these
-     * matching terms as relationship sources (`_from`) will be selected and
-     * further trimmed by only selecting those edges whose paths list (`_path`)
-     * contain the enumeration type global identifier provided in the `theType`
-     * parameter. The method will return the global identifier of the term that
-     * holds the provided official identifier and belongs to the provided graph
-     * path.
-     *
-     * The method should return a single element or no elements if there were no
-     * matches.
-     *
-     * Use this method when you expect enumeration official codes (official
-     * identifiers) rather than full codes (global identifiers).
-     *
-     * The cache is not consulted by this method.
-     *
-     * @param theCode {String}: The enumeration local identifier.
-     * @param theType {String}: The enumeration type global identifier.
-     * @return {[String]}: The list of term global identifiers matching code and
-     * type.
-     */
-    getEnumByAID(theCode, theType)
-    {
-        ///
-        // Match terms matching code and edges matching path.
-        ///
-        return TermsCache.getEnumGIDByCode(
-            module.context.configuration.officialIdentifiers,
-            theCode,
-            theType
-        )                                                               // ==>
-
-    } // getEnumByAID()
-
-    /**
-     * getTermByPID
-     *
-     * This method can be used to retrieve the global identifier of the term
-     * whose provider identifiers match the provided `code` and is an
-     * enumeration element of the graph whose path matches the provided `type`
-     * parameter.
-     *
-     * The code provided in the `theCode` parameter must match at least one of
-     * the term's provider identifiers (`_pid`). All edges featuring these
-     * matching terms as relationship sources (`_from`) will be selected and
-     * further trimmed by only selecting those edges whose paths list (`_path`)
-     * contain the enumeration type global identifier provided in the `theType`
-     * parameter. The method will return the global identifier of the term that
-     * holds the provided provider identifier and belongs to the provided graph
-     * path.
-     *
-     * The method should return a single element or no elements if there were no
-     * matches.
-     *
-     * Use this method when you expect enumeration provider codes (official
-     * identifiers) rather than full codes (global identifiers).
-     *
-     * The cache is not consulted by this method.
-     *
-     * @param theCode {String}: The enumeration local identifier.
-     * @param theType {String}: The enumeration type global identifier.
-     * @return {[String]}: The list of term global identifiers matching code and
-     * type.
-     */
-    getEnumByPID(theCode, theType)
-    {
-        ///
-        // Match terms matching code and edges matching path.
-        ///
-        return TermsCache.getEnumGIDByCode(
-            module.context.configuration.providerIdentifiers,
-            theCode,
-            theType
-        )                                                               // ==>
-
-    } // getEnumByPID()
-
 
     /**
      * STATIC METHODS
      */
 
     /**
-     * getEnumGIDByCode
+     * QueryEnumIdentifierByCode
      *
      * Use this method to retrieve the global identifier of the term satisfying
      * the following conditions:
      *
      * - The term must be an enumeration element in the graph path identified
      * by the `theEnum` parameter.
-     * - The term must feature a property that belongs to the code section of
-     * the term record named as the `theField` parameter.
+     * - The term must feature a property, belonging to the code section of the
+     * term record, named as the `theField` parameter.
      * - The property named as the `theField` parameter must have a value
      * matching the value of the `theValue` parameter.
-     * - The property referenced in the `theField` parameter can either be a
-     * scalar or an array.
+     *
+     * Any top level property of the code section can be used by this method: it
+     * supports scalars and arrays.
      *
      * The cache is not consulted by this method.
      *
@@ -404,7 +277,7 @@ class TermsCache
      * @return {[String]}: The list of term global identifiers matching code and
      * type.
      */
-    static getEnumGIDByCode(theField, theValue, theEnum)
+    static QueryEnumIdentifierByCode(theField, theValue, theEnum)
     {
         ///
         // Query the database.
@@ -423,7 +296,64 @@ class TermsCache
             RETURN PARSE_IDENTIFIER(edge._from).key
         `)                                                              // ==>
 
-    } // getEnumGIDByCode()
+    } // QueryEnumIdentifierByCode()
+
+    /**
+     * QueryEnumTermByCode
+     *
+     * Use this method to retrieve the record of the term satisfying the
+     * following conditions:
+     *
+     * - The term must be an enumeration element in the graph path identified
+     * by the `theEnum` parameter.
+     * - The term must feature a property, belonging to the code section of the
+     * term record, named as the `theField` parameter.
+     * - The property named as the `theField` parameter must have a value
+     * matching the value of the `theValue` parameter.
+     *
+     * Any top level property of the code section can be used by this method: it
+     * supports scalars and arrays.
+     *
+     * The method will return a key/value dictionary in which the key is the
+     * term global identifier and the value its record.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @param theField {String}: Name of the field.
+     * @param theValue {String}: Value of the field.
+     * @param theEnum {String}: The enumeration type global identifier.
+     * @return {[Object]}: The list of term records matching code and
+     * type.
+     */
+    static QueryEnumTermByCode(theField, theValue, theEnum)
+    {
+        ///
+        // Query the database.
+        ///
+        return db._query(aql`
+            LET terms = (
+              FOR term IN ${view_terms}
+                SEARCH term.${module.context.configuration.sectionCode}.${theField} == ${theValue}
+              RETURN CONCAT_SEPARATOR('/', ${module.context.configuration.collectionTerm}, term._key)
+            )
+            
+            LET enums = (
+                FOR edge IN ${collection_edges}
+                  FILTER edge._from IN terms
+                  FILTER edge.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
+                  FILTER CONCAT_SEPARATOR("/", ${module.context.configuration.collectionTerm}, ${theEnum}) IN edge.${module.context.configuration.sectionPath}
+                RETURN PARSE_IDENTIFIER(edge._from).key
+            )
+            
+            FOR enum IN enums
+              FOR term IN ${view_terms}
+                SEARCH term._key == enum
+              RETURN {
+                [enum]: term
+              }
+        `)                                                              // ==>
+
+    } // QueryEnumTermByCode()
 
 } // Class: TermsCache
 
