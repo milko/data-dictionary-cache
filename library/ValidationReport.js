@@ -34,7 +34,7 @@ class ValidationReport
 
 	} // constructor()
 
-} // Class: TermsCache
+} // Class: ValidationReport
 
 /**
  * Class: ValidationStatus

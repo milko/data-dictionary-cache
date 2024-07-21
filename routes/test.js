@@ -8,11 +8,11 @@ const joi = require('joi')
 const createRouter = require('@arangodb/foxx/router')
 
 ///
-// Cache.
+// Classes.
 ///
-const TermCache = require('../library/TermsCache')
-const ValidationReport = require("../library/ValidationReport");
-const Cache = new TermCache()
+const ValidationReport = require('../library/ValidationReport')
+const TermsCache = require('../library/TermsCache')
+const Validator = require('../library/Validator')
 
 
 ///
@@ -23,6 +23,22 @@ module.exports = router
 router.tag('test')
 
 
+// /**
+//  * Test TermsCache::getTerm()
+//  */
+// router.get(
+//     function (req, res){
+//
+//         res.send("Hello!")                                    // ==>
+//
+//     }, 'test')
+//     .summary('Test')
+//     .description(dd`Simple test.`)
+//     .response(
+//         joi.string(),
+//         'Hello!'
+//     )
+
 /**
  * Test TermsCache::getTerm()
  */
@@ -30,8 +46,10 @@ router.get(
     'getTerm',
     function (req, res){
 
-      const key = req.queryParams.GID
-      res.send(Cache.getTerm(key))
+        const cache = new TermsCache()
+        const key = req.queryParams.GID
+
+        res.send(cache.getTerm(key))                                    // ==>
 
     }, 'getTerm')
     .summary('Test getTerm()')
@@ -53,8 +71,10 @@ router.post(
     'getTerms',
     function (req, res){
 
-      const keys = req.body
-      res.send(Cache.getTerms(keys))
+        const cache = new TermsCache()
+        const keys = req.body
+
+        res.send(cache.getTerms(keys))
 
     }, 'getTerms')
     .summary('Test getTerms()')
@@ -79,7 +99,7 @@ router.get(
         const code = req.queryParams.code
         const type = req.queryParams.type
 
-        res.send(TermCache.QueryEnumIdentifierByCode(field, code, type))
+        res.send(TermsCache.QueryEnumIdentifierByCode(field, code, type))
 
     }, 'QueryEnumIdentifierByCode')
     .summary('Test QueryEnumIdentifierByCode()')
@@ -115,7 +135,7 @@ router.get(
         const code = req.queryParams.code
         const type = req.queryParams.type
 
-        res.send(TermCache.QueryEnumTermByCode(field, code, type))
+        res.send(TermsCache.QueryEnumTermByCode(field, code, type))
 
     }, 'QueryEnumTermByCode')
     .summary('Test QueryEnumTermByCode()')
@@ -141,7 +161,7 @@ router.get(
     )
 
 /**
- * Test TermsCache::getEnumByPID()
+ * Test ValidationReport()
  */
 router.get(
     'newValidationReport',
@@ -149,7 +169,6 @@ router.get(
 
         const status = req.queryParams.status
         const descriptor = req.queryParams.descriptor
-
         const report = new ValidationReport(status, descriptor)
 
         res.send(report)
@@ -170,4 +189,23 @@ router.get(
     .response(
         joi.array(),
         'ValidationStatus record.'
+    )
+
+/**
+ * Test Validator()
+ */
+router.get(
+    'newValidator',
+    function (req, res){
+
+        const validator = new Validator()
+
+        res.send(validator)
+
+    }, 'new Validator()')
+    .summary('Test Validator()')
+    .description(dd`Create an empty validator object.`)
+    .response(
+        joi.object(),
+        'Validator record.'
     )

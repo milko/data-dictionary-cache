@@ -43,7 +43,7 @@ const view_terms = {
  * terms will only feature the `_key`, `_data`, `_rule` and the `_path`
  * properties, this to minimise the size of the cache.
  *
- * The class features a local `batch` member, this is a cache that isused to
+ * The class features a local `batch` member, this is a cache that is used to
  * store terms and edges *before these are stored in the database*.
  * We use this cache to perform validation on a series of terms and edges, and
  * only submit the transaction if all elements are valid. The terms stored in
@@ -228,7 +228,7 @@ class TermsCache
      * @param doBatch {Boolean}: Check batch, defaults to `true`.
      * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
      *
-     * @return {Object}: Dictionary of matched terms..
+     * @return {Object}: Dictionary of matched terms.
      */
     getTerms(
         TheTermGIDList,
