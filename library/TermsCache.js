@@ -42,16 +42,6 @@ const view_terms = {
  * Note that this cache is generally used for validation purposes, so stored
  * terms will only feature the `_key`, `_data`, `_rule` and the `_path`
  * properties, this to minimise the size of the cache.
- *
- * The class features a local `batch` member, this is a cache that is used to
- * store terms and edges *before these are stored in the database*.
- * We use this cache to perform validation on a series of terms and edges, and
- * only submit the transaction if all elements are valid. The terms stored in
- * this cache are expected to have all their components: after committing
- * transactions these complete terms will be reduced to the same format as the
- * cache and stored there.
- * The fact that this member is not static means that each instance of this
- * class will have its own batch cache version.
  */
 class TermsCache
 {
@@ -69,11 +59,6 @@ class TermsCache
         module.context.configuration.sectionRule,
         module.context.configuration.sectionPath
     ]
-
-    ///
-    // Local batch cache.
-    ///
-    batch = {}
 
     /**
      * constructor
@@ -99,19 +84,16 @@ class TermsCache
      * The method expects the term global identifier in the `theTermGID`
      * parameter.
      *
-     * The method features two flags: `doCache`, and `doBatch`.
-     * If `doCache` is true, the method will check if it can find the term in
-     * the cache, in that case it will return it. If the `doBatch` flag is set
-     * and the term was not found in the cache, the method will try to locate it
-     * in the batch cache: if found, the method will return the term record.
+     * The method features two flags: `doCache`, and `doMissing`.
      *
-     * If the term cannot be found in either the cache or the batch cache, the
-     * method will query the database. If the term was found, it will be
-     * stripped of all top level properties, except `_key`, `_data` and `_rule`,
-     * and the method will check if an edge exists with the term as the `_from`
-     * property and the `_predicate_enum-of` as the predicate: in that case the
-     * `_path` property of the edge will be added to the term's top level. This
-     * is the record that will be returned by the method.
+     * If `doCache` is true, the method will check if it can find the term in
+     * the cache, if the term cannot be found, the method will query the
+     * database. If the term was found, it will be stripped of all top level
+     * properties, except `_key`, `_data` and `_rule`, and the method will check
+     * if an edge exists with the term as the `_from` property and the
+     * `_predicate_enum-of` as the predicate: in that case the `_path` property
+     * of the edge will be added to the term's top level. This is the record
+     * that will be returned by the method.
      *
      * If the term was retrieved from the database and the `doCache` flag is
      * set, the record will be added to the cache.
@@ -123,7 +105,6 @@ class TermsCache
      *
      * @param theTermGID {String}: The term global identifier (`_key`).
      * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
-     * @param doBatch {Boolean}: Check batch, defaults to `true`.
      * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
      *
      * @return {Object}: The term record or `false` if the term does not exist.
@@ -131,7 +112,6 @@ class TermsCache
     getTerm(
         theTermGID,
         doCache = true,
-        doBatch = true,
         doMissing = true
     ){
         ///
@@ -139,14 +119,6 @@ class TermsCache
         ///
         if(doCache && TermsCache.cache.hasOwnProperty(theTermGID)) {
             return TermsCache.cache[theTermGID]                         // ==>
-        }
-
-        ///
-        // Check batch.
-        // If batch is on and term is there, return it.
-        ///
-        if(doBatch && this.batch.hasOwnProperty(theTermGID)) {
-            return this.batch[theTermGID]                               // ==>
         }
 
         ///
@@ -225,7 +197,6 @@ class TermsCache
      *
      * @param TheTermGIDList {[String]}: The term global identifiers list.
      * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
-     * @param doBatch {Boolean}: Check batch, defaults to `true`.
      * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
      *
      * @return {Object}: Dictionary of matched terms.
@@ -233,7 +204,6 @@ class TermsCache
     getTerms(
         TheTermGIDList,
         doCache = true,
-        doBatch = true,
         doMissing = true
     ){
         ///
@@ -241,7 +211,7 @@ class TermsCache
         ///
         const result = {}
         TheTermGIDList.forEach( (term) => {
-            result[term] = this.getTerm(term, doCache, doBatch, doMissing)
+            result[term] = this.getTerm(term, doCache, doMissing)
         })
 
         return result                                                   // ==>

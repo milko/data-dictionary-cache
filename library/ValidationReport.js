@@ -109,6 +109,30 @@ class ValidationStatus
 				"iso_639_3_esp": "Operativo.",
 				"iso_639_3_deu": "Betriebsbereit."
 			}
+		},
+		"kNOT_AN_OBJECT": {
+			"statusCode": 1,
+			"statusMessage": {
+				"iso_639_3_eng": "Expecting an object value."
+			}
+		},
+		"kNOT_AN_ARRAY": {
+			"statusCode": 2,
+			"statusMessage": {
+				"iso_639_3_eng": "Expecting an array value."
+			}
+		},
+		"kEMPTY_OBJECT": {
+			"statusCode": 3,
+			"statusMessage": {
+				"iso_639_3_eng": "The object is empty."
+			}
+		},
+		"kUNKNOWN_DESCRIPTOR": {
+			"statusCode": 4,
+			"statusMessage": {
+				"iso_639_3_eng": "Unknown descriptor."
+			}
 		}
 	}
 
