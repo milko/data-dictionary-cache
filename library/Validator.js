@@ -46,12 +46,11 @@ class Validator
 	 * validateObject
 	 *
 	 * Use this method to validate the provided object, all properties that are
-	 * known terms will be considered descriptors and their values will be
-	 * checked.
+	 * known terms will be considered descriptors and their values checked.
 	 *
 	 * The outcome of the validation will be published in the `report` data
 	 * member. If the validation failed, the report might also hold data members
-	 * referencing parts of the offending object.
+	 * referencing parts of the offending values.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
@@ -92,6 +91,9 @@ class Validator
 		} // Value is an object.
 
 		this.report = new ValidationReport('kNOT_AN_OBJECT')
+		if(theParent !== null) {
+			this.report.parentValue = theParent
+		}
 		this.report.value = theValue
 
 		return false                                                    // ==>
@@ -101,8 +103,13 @@ class Validator
 	/**
 	 * validateObjects
 	 *
-	 * Use this method to validate an array of objects. Each object's property
-	 * will be scanned.
+	 * Use this method to validate the provided list of objects. Each element of
+	 * the provided list is expected to be an object and each property that is a
+	 * known terms will be considered a descriptor and their values checked.
+	 *
+	 * The outcome of the validation will be published in the `report` data
+	 * member. If the validation failed, the report might also hold data members
+	 * referencing parts of the offending values.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
@@ -137,28 +144,88 @@ class Validator
 	} // validateObjects()
 
 	/**
+	 * validateObjectList
+	 *
+	 * Use this method to validate the provided list of objects against the
+	 * provided descriptor. Each element of the provided list is expected to be
+	 * an object belonging to the provided descriptor, and each property that is
+	 * a known terms will be considered a descriptor and their values checked.
+	 *
+	 * The outcome of the validation will be published in the `report` data
+	 * member. If the validation failed, the report might also hold data members
+	 * referencing parts of the offending values.
+	 *
+	 * The method returns a boolean: `true` means the validation was successful,
+	 * if the validation failed, the method will return `false`.
+	 *
+	 * @param theValues {[Object]}: The object value.
+	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theParent {Any}: Parent value, defaults to null.
+	 * @return {Boolean}: `true` means valid, `false` means error.
+	 */
+	validateObjectList(theValues, theDescriptor, theParent = null)
+	{
+		///
+		// Locate descriptor.
+		///
+		const descriptor = this.cache.getTerm(theDescriptor, true, false)
+		if(descriptor === false) {
+			this.report = new ValidationReport('kUNKNOWN_DESCRIPTOR')
+			if(theParent !== null) {
+				this.report.parentValue = theParent
+			}
+			this.report.value = theDescriptor
+
+			return false                                                // ==>
+		}
+
+		///
+		// Handle array of objects.
+		///
+		if(Validator.IsArray(theValues))
+		{
+			theValues.some( (item) => {
+				return this.validateValue(theValues, item, theParent)
+			})
+
+			return this.report.statusCode === 0                         // ==>
+
+		} // Value is an array.
+
+		this.report = new ValidationReport('kNOT_AN_ARRAY')
+		if(theParent !== null) {
+			this.report.parentValue = theParent
+		}
+		this.report.value = theValues
+
+		return false                                                    // ==>
+
+	} // validateObjectList()
+
+	/**
 	 * validateValue
 	 *
 	 * This method will validate the key/value pair constituted by the provided
 	 * descriptor and the provided value.
 	 *
-	 * If the descriptor does not correspond to any existing term,the value will
-	 * be considered *valid*.
+	 * If the descriptor does *not correspond* to any existing terms, the value
+	 * will be considered *valid*.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
 	 *
-	 * @param theDescriptor {String}: The descriptor global identifier.
 	 * @param theValue {Any}: The descriptor value.
+	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theParent {Any}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	validateValue(theDescriptor, theValue)
+	validateValue(theValue, theDescriptor, theParent = null)
 	{
 		///
-		// Locate term.
+		// Locate descriptor.
 		///
-		const term = this.cache.getTerm(theDescriptor, true, false)
-		if(term === false) {
+		const descriptor = this.cache.getTerm(theDescriptor, true, false)
+		if(descriptor === false) {
 			return true                                                 // ==>
 		}
 
@@ -176,25 +243,29 @@ class Validator
 	 * This method will validate the key/value pair constituted by the provided
 	 * descriptor and the provided value.
 	 *
-	 * If the descriptor does not correspond to any existing term,the validation
-	 * will fail.
+	 * If the descriptor does *not correspond* to any existing terms, the value
+	 * will be considered *incorrect*.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
 	 *
-	 * @param theDescriptor {String}: The descriptor global identifier.
 	 * @param theValue {Any}: The descriptor value.
+	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theParent {Any}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	validateDescriptor(theDescriptor, theValue)
+	validateDescriptor(theValue, theDescriptor, theParent = null)
 	{
 		///
-		// Locate term.
+		// Locate descriptor.
 		///
-		const term = this.cache.getTerm(theDescriptor, true, false)
-		if(term === false) {
+		const descriptor = this.cache.getTerm(theDescriptor, true, false)
+		if(descriptor === false) {
 			this.report = new ValidationReport('kUNKNOWN_DESCRIPTOR')
-			this.report.descriptor = theDescriptor
+			if(theParent !== null) {
+				this.report.parentValue = theParent
+			}
+			this.report.value = theDescriptor
 
 			return false                                                // ==>
 		}

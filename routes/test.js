@@ -192,46 +192,87 @@ router.get(
     )
 
 /**
- * Test Validator()
+ * Test validateObject()
  */
 router.post(
-    'newValidator',
+    'validateObject',
     function (req, res){
 
         const validator = new Validator()
 
-        ///
-        // Handle known descriptor.
-        ///
-        if(req.queryParams.descriptor.length > 0) {
-            validator.validateDescriptor(req.queryParams.descriptor, req.body)
-        } else {
-            if(Validator.IsArray(req.body)) {
-                validator.validateObjects(req.body)
-            }
-            else if(Validator.IsObject(req.body)) {
-                validator.validateObject(req.body)
-            } else {
-                validator.validateObject(req.body)
-            }
-        }
+        validator.validateObject(req.body)
 
         res.send(validator.report)
 
-    }, 'new Validator()')
-    .summary('Test Validator()')
-    .description(dd`Create an empty validator object.`)
+    }, 'validateObject()')
+    .summary('Test validateObject()')
+    .description(dd`Validate provided object.`)
+    .body(joi.alternatives().try(
+        joi.array(),
+        joi.object(),
+        joi.string(),
+        joi.number()
+    ), dd`Accept any type of value to check validation.`)
+    .response(
+        joi.object(),
+        'Validator record.'
+    )
+
+/**
+ * Test validateObjects()
+ */
+router.post(
+    'validateObjects',
+    function (req, res){
+
+        const validator = new Validator()
+
+        validator.validateObjects(req.body)
+
+        res.send(validator.report)
+
+    }, 'validateObjects()')
+    .summary('Test validateObjects()')
+    .description(dd`Validate provided list of objects.`)
+    .body(joi.alternatives().try(
+        joi.array(),
+        joi.object(),
+        joi.string(),
+        joi.number()
+    ), dd`Accept any type of value to check validation.`)
+    .response(
+        joi.object(),
+        'Validator record.'
+    )
+
+/**
+ * Test validateObjectList()
+ */
+router.post(
+    'validateObjectList',
+    function (req, res){
+
+        const validator = new Validator()
+        const descriptor = req.queryParams.descriptor
+
+        validator.validateObjectList(req.body, descriptor)
+
+        res.send(validator.report)
+
+    }, 'validateObjectList()')
+    .summary('Test validateObjectList()')
+    .description(dd`Validate provided list of objects against provided descriptor.`)
     .queryParam(
         'descriptor',
-        joi.string().default(""),
-        "Descriptor global idenrtifier"
+        joi.string(),
+        "Descriptor global identifier"
     )
     .body(joi.alternatives().try(
         joi.array(),
         joi.object(),
         joi.string(),
         joi.number()
-    ), dd`Create an empty validator object.`)
+    ), dd`Accept any type of value to check validation.`)
     .response(
         joi.object(),
         'Validator record.'
