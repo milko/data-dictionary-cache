@@ -100,6 +100,12 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kEXPENTING_DATA_DIMENSION": {
+			"statusCode": -1,
+			"statusMessage": {
+				"iso_639_3_eng": `The provided descriptor lacks a required property in its data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\``
+			}
+		},
 		"kOK": {
 			"statusCode": 0,
 			"statusMessage": {
@@ -128,10 +134,16 @@ class ValidationStatus
 				"iso_639_3_eng": "The object is empty."
 			}
 		},
-		"kUNKNOWN_DESCRIPTOR": {
+		"kUNKNOWN_TERM": {
 			"statusCode": 4,
 			"statusMessage": {
-				"iso_639_3_eng": "Unknown descriptor."
+				"iso_639_3_eng": "Term not found."
+			}
+		},
+		"kNOT_A_DESCRIPTOR": {
+			"statusCode": 5,
+			"statusMessage": {
+				"iso_639_3_eng": "The provided term reference is not a descriptor."
 			}
 		}
 	}

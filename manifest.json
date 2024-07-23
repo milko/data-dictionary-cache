@@ -73,6 +73,30 @@
             "required": true,
             "default": "_rule"
         },
+        "sectionScalar": {
+            "description": "Term scalar data definition section",
+            "type": "string",
+            "required": true,
+            "default": "_scalar"
+        },
+        "sectionArray": {
+            "description": "Term array data definition section",
+            "type": "string",
+            "required": true,
+            "default": "_array"
+        },
+        "sectionSet": {
+            "description": "Term set data definition section",
+            "type": "string",
+            "required": true,
+            "default": "_set"
+        },
+        "sectionDict": {
+            "description": "Term dictionary data definition section",
+            "type": "string",
+            "required": true,
+            "default": "_dict"
+        },
         "sectionPath": {
             "description": "Term edge path section",
             "type": "string",

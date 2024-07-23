@@ -277,3 +277,69 @@ router.post(
         joi.object(),
         'Validator record.'
     )
+
+/**
+ * Test validateDescriptor()
+ */
+router.post(
+    'validateDescriptor',
+    function (req, res){
+
+        const validator = new Validator()
+        const descriptor = req.queryParams.descriptor
+
+        validator.validateDescriptor(req.body, descriptor)
+
+        res.send(validator.report)
+
+    }, 'validateDescriptor()')
+    .summary('Test validateDescriptor()')
+    .description(dd`Validate provided value against provided descriptor.`)
+    .queryParam(
+        'descriptor',
+        joi.string(),
+        "Descriptor global identifier"
+    )
+    .body(joi.alternatives().try(
+        joi.array(),
+        joi.object(),
+        joi.string(),
+        joi.number()
+    ), dd`Accept any type of value to check validation.`)
+    .response(
+        joi.object(),
+        'Validator record.'
+    )
+
+/**
+ * Test validateValue()
+ */
+router.post(
+    'validateValue',
+    function (req, res){
+
+        const validator = new Validator()
+        const descriptor = req.queryParams.descriptor
+
+        validator.validateValue(req.body, descriptor)
+
+        res.send(validator.report)
+
+    }, 'validateValue()')
+    .summary('Test validateValue()')
+    .description(dd`Validate provided value against possible provided descriptor.`)
+    .queryParam(
+        'descriptor',
+        joi.string(),
+        "Descriptor global identifier"
+    )
+    .body(joi.alternatives().try(
+        joi.array(),
+        joi.object(),
+        joi.string(),
+        joi.number()
+    ), dd`Accept any type of value to check validation.`)
+    .response(
+        joi.object(),
+        'Validator record.'
+    )
