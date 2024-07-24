@@ -192,153 +192,106 @@ router.get(
     )
 
 /**
- * Test validateObject()
+ * Test Validator::constructor()
  */
 router.post(
-    'validateObject',
+    'validator',
     function (req, res){
 
-        const validator = new Validator()
+        const validator =
+            new Validator(
+                req.body,
+                req.queryParams.descriptor,
+                req.queryParams.doZip,
+                req.queryParams.doResolve,
+                req.queryParams.resolveCode
+            )
 
-        validator.validateObject(req.body)
+        res.send(validator)
 
-        res.send(validator.report)
-
-    }, 'validateObject()')
-    .summary('Test validateObject()')
-    .description(dd`Validate provided object.`)
-    .body(joi.alternatives().try(
-        joi.array(),
-        joi.object(),
-        joi.string(),
-        joi.number()
-    ), dd`Accept any type of value to check validation.`)
-    .response(
-        joi.object(),
-        'Validator record.'
-    )
-
-/**
- * Test validateObjects()
- */
-router.post(
-    'validateObjects',
-    function (req, res){
-
-        const validator = new Validator()
-
-        validator.validateObjects(req.body)
-
-        res.send(validator.report)
-
-    }, 'validateObjects()')
-    .summary('Test validateObjects()')
-    .description(dd`Validate provided list of objects.`)
-    .body(joi.alternatives().try(
-        joi.array(),
-        joi.object(),
-        joi.string(),
-        joi.number()
-    ), dd`Accept any type of value to check validation.`)
-    .response(
-        joi.object(),
-        'Validator record.'
-    )
-
-/**
- * Test validateObjectList()
- */
-router.post(
-    'validateObjectList',
-    function (req, res){
-
-        const validator = new Validator()
-        const descriptor = req.queryParams.descriptor
-
-        validator.validateObjectList(req.body, descriptor)
-
-        res.send(validator.report)
-
-    }, 'validateObjectList()')
-    .summary('Test validateObjectList()')
-    .description(dd`Validate provided list of objects against provided descriptor.`)
+    }, 'Validator::constructor()')
+    .summary('Test Validator::constructor()')
+    .description(dd`Test the Validator class constructor.`)
     .queryParam(
         'descriptor',
         joi.string(),
         "Descriptor global identifier"
     )
+    .queryParam(
+        'doZip',
+        joi.boolean().default(false),
+        "Associate descriptor to array of values"
+    )
+    .queryParam(
+        'doResolve',
+        joi.boolean().default(false),
+        "Resolve codes and preferred enumerations"
+    )
+    .queryParam(
+        'resolveCode',
+        joi.string().default("_lid"),
+        "Code section property for resolving"
+    )
     .body(joi.alternatives().try(
         joi.array(),
         joi.object(),
         joi.string(),
-        joi.number()
-    ), dd`Accept any type of value to check validation.`)
+        joi.number(),
+        joi.boolean()
+    ), dd`Accept any type of value..`)
     .response(
         joi.object(),
         'Validator record.'
     )
 
 /**
- * Test validateDescriptor()
+ * Test Validator::validate()
  */
 router.post(
-    'validateDescriptor',
+    'validate',
     function (req, res){
 
-        const validator = new Validator()
-        const descriptor = req.queryParams.descriptor
+        const validator =
+            new Validator(
+                req.body,
+                req.queryParams.descriptor,
+                req.queryParams.doZip,
+                req.queryParams.doResolve,
+                req.queryParams.resolveCode
+            )
 
-        validator.validateDescriptor(req.body, descriptor)
+        res.send(validator)
 
-        res.send(validator.report)
-
-    }, 'validateDescriptor()')
-    .summary('Test validateDescriptor()')
-    .description(dd`Validate provided value against provided descriptor.`)
+    }, 'Validator::validate()')
+    .summary('Test Validator::validate()')
+    .description(dd`Test the validate() method.`)
     .queryParam(
         'descriptor',
         joi.string(),
         "Descriptor global identifier"
     )
-    .body(joi.alternatives().try(
-        joi.array(),
-        joi.object(),
-        joi.string(),
-        joi.number()
-    ), dd`Accept any type of value to check validation.`)
-    .response(
-        joi.object(),
-        'Validator record.'
-    )
-
-/**
- * Test validateValue()
- */
-router.post(
-    'validateValue',
-    function (req, res){
-
-        const validator = new Validator()
-        const descriptor = req.queryParams.descriptor
-
-        validator.validateValue(req.body, descriptor)
-
-        res.send(validator.report)
-
-    }, 'validateValue()')
-    .summary('Test validateValue()')
-    .description(dd`Validate provided value against possible provided descriptor.`)
     .queryParam(
-        'descriptor',
-        joi.string(),
-        "Descriptor global identifier"
+        'doZip',
+        joi.boolean().default(false),
+        "Associate descriptor to array of values"
+    )
+    .queryParam(
+        'doResolve',
+        joi.boolean().default(false),
+        "Resolve codes and preferred enumerations"
+    )
+    .queryParam(
+        'resolveCode',
+        joi.string().default("_lid"),
+        "Code section property for resolving"
     )
     .body(joi.alternatives().try(
         joi.array(),
         joi.object(),
         joi.string(),
-        joi.number()
-    ), dd`Accept any type of value to check validation.`)
+        joi.number(),
+        joi.boolean()
+    ), dd`Accept any type of value..`)
     .response(
         joi.object(),
         'Validator record.'

@@ -50,88 +50,226 @@
             "default": "VIEW_TERM"
         },
         "sectionCode": {
-            "description": "Term codes section name",
+            "description": "Term codes section name key",
             "type": "string",
             "required": true,
             "default": "_code"
         },
         "sectionInfo": {
-            "description": "Term information section name",
+            "description": "Term information section name key",
             "type": "string",
             "required": true,
             "default": "_info"
         },
         "sectionData": {
-            "description": "Term data section name",
+            "description": "Term data section name key",
             "type": "string",
             "required": true,
             "default": "_data"
         },
         "sectionRule": {
-            "description": "Term rules section name",
+            "description": "Term rules section name key",
             "type": "string",
             "required": true,
             "default": "_rule"
         },
         "sectionScalar": {
-            "description": "Term scalar data definition section",
+            "description": "Term scalar data definition section key",
             "type": "string",
             "required": true,
             "default": "_scalar"
         },
         "sectionArray": {
-            "description": "Term array data definition section",
+            "description": "Term array data definition section key",
             "type": "string",
             "required": true,
             "default": "_array"
         },
         "sectionSet": {
-            "description": "Term set data definition section",
+            "description": "Term set data definition section key",
             "type": "string",
             "required": true,
             "default": "_set"
         },
         "sectionDict": {
-            "description": "Term dictionary data definition section",
+            "description": "Term dictionary data definition section key",
             "type": "string",
             "required": true,
             "default": "_dict"
         },
         "sectionPath": {
-            "description": "Term edge path section",
+            "description": "Term edge path section key",
             "type": "string",
             "required": true,
             "default": "_path"
         },
         "predicate": {
-            "description": "Predicate descriptor",
+            "description": "Predicate descriptor key",
             "type": "string",
             "required": true,
             "default": "_predicate"
         },
         "predicateEnumeration": {
-            "description": "Enumeration predicate",
+            "description": "Enumeration predicate key",
             "type": "string",
             "required": true,
             "default": "_predicate_enum-of"
         },
         "localIdentifier": {
-            "description": "Local identifier",
+            "description": "Local identifier key",
             "type": "string",
             "required": true,
             "default": "_lid"
         },
         "officialIdentifiers": {
-            "description": "List of official identifiers",
+            "description": "List of official identifiers key",
             "type": "string",
             "required": true,
             "default": "_aid"
         },
         "providerIdentifiers": {
-            "description": "List of provider identifiers",
+            "description": "List of provider identifiers key",
             "type": "string",
             "required": true,
-            "default": "_aid"
+            "default": "_pid"
+        },
+        "scalarType": {
+            "description": "Scalar data type descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_type"
+        },
+        "typeBoolean": {
+            "description": "Boolean data type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_boolean"
+        },
+        "typeInteger": {
+            "description": "Integer data type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_integer"
+        },
+        "typeNumber": {
+            "description": "Number data type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_number"
+        },
+        "typeTypestamp": {
+            "description": "Timestamp data type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_number_timestamp"
+        },
+        "typeString": {
+            "description": "String data type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_string"
+        },
+        "typeKey": {
+            "description": "Term global identifier type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_string_key"
+        },
+        "typeHandle": {
+            "description": "Term handle type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_string_handle"
+        },
+        "typeEnum": {
+            "description": "Enumeration type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_string_enum"
+        },
+        "typeDate": {
+            "description": "Date type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_string_date"
+        },
+        "typeStruct": {
+            "description": "Structure type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_struct"
+        },
+        "typeObject": {
+            "description": "Structure type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_object"
+        },
+        "typeGeoJSON": {
+            "description": "GeoJSON object type key",
+            "type": "string",
+            "required": true,
+            "default": "_type_object_geojson"
+        },
+        "rangeNumber": {
+            "description": "Numeric valid range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_valid-range"
+        },
+        "rangeNumberMinInclusive": {
+            "description": "Numeric minimum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-inclusive"
+        },
+        "rangeNumberMaxInclusive": {
+            "description": "Numeric maximum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-inclusive"
+        },
+        "rangeNumberMinExclusive": {
+            "description": "Numeric minimum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-exclusive"
+        },
+        "rangeNumberMaxExclusive": {
+            "description": "Numeric maximum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-exclusive"
+        },
+        "rangeString": {
+            "description": "String valid range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_valid-range_string"
+        },
+        "rangeStringMinInclusive": {
+            "description": "String minimum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-inclusive_string"
+        },
+        "rangeStringMaxInclusive": {
+            "description": "String maximum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-inclusive_string"
+        },
+        "rangeStringMinExclusive": {
+            "description": "String minimum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-exclusive_string"
+        },
+        "rangeStringMaxExclusive": {
+            "description": "String maximum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-exclusive_string"
         }
     },
     "tests": "test/**/*.js"

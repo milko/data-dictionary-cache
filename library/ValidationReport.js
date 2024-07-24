@@ -12,10 +12,21 @@
  * Class: ValidationReport
  *
  * The class implements the following data members:
- * - status: A record containing the status code and message in the default
+ * - status: A record containing the status code and message.
+ * - `descriptor`: The descriptor global identifier.
  */
 class ValidationReport
 {
+	/**
+	 * constructor
+	 *
+	 * The constructor instantiates an idle report.
+	 *
+	 * The method expects the status code and the descriptor global identifier.
+	 *
+	 * @param theStatusCode
+	 * @param theDescriptor
+	 */
 	constructor(
 		theStatusCode = 'kOK',
 		theDescriptor = ''
@@ -26,7 +37,7 @@ class ValidationReport
 		this.status = new ValidationStatus(theStatusCode)
 
 		///
-		// Set descriptir reference.
+		// Set descriptor reference.
 		///
 		if(theDescriptor.length > 0) {
 			this.descriptor = theDescriptor
@@ -100,6 +111,12 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kRANGE_NOT_AN_OBJECT": {
+			"statusCode": -2,
+			"statusMessage": {
+				"iso_639_3_eng": "The range variable is expected to be an object."
+			}
+		},
 		"kEXPENTING_DATA_DIMENSION": {
 			"statusCode": -1,
 			"statusMessage": {
@@ -144,6 +161,48 @@ class ValidationStatus
 			"statusCode": 5,
 			"statusMessage": {
 				"iso_639_3_eng": "The provided term reference is not a descriptor."
+			}
+		},
+		"kNOT_A_SCALAR": {
+			"statusCode": 6,
+			"statusMessage": {
+				"iso_639_3_eng": "The value is not a scalar."
+			}
+		},
+		"kMISSING_SCALAR_DATA_TYPE": {
+			"statusCode": 7,
+			"statusMessage": {
+				"iso_639_3_eng": `Invalid descriptor: missing data type (${module.context.configuration.scalarType}).`
+			}
+		},
+		"kNOT_A_BOOLEAN": {
+			"statusCode": 8,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is not a boolean."
+			}
+		},
+		"kNOT_AN_INTEGER": {
+			"statusCode": 9,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is not an integer."
+			}
+		},
+		"kNOT_A_NUMBER": {
+			"statusCode": 10,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is not a number."
+			}
+		},
+		"kVALUE_OUT_OF_RANGE": {
+			"statusCode": 11,
+			"statusMessage": {
+				"iso_639_3_eng": "Value out of range."
+			}
+		},
+		"kVALUE_NOT_A_TIMESTAMP": {
+			"statusCode": 12,
+			"statusMessage": {
+				"iso_639_3_eng": "Value cannot be interpreted as a timestamp."
 			}
 		}
 	}
