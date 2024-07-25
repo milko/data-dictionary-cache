@@ -3,38 +3,59 @@
 /**
  * ValidationReport.js
  *
- * This file contains the ValidationReport class which implements a report that
- * will be used to return status information regarding validation procedures.
+ * This file contains the ValidationReportand ValidationStatus class
+ * definitions.
  */
 
 
 /**
  * Class: ValidationReport
  *
- * The class implements the following data members:
- * - status: A record containing the status code and message.
- * - `descriptor`: The descriptor global identifier.
+ * This class instantiates an object representing the report of a validation
+ * session. The object feature the following data members:
+ *
+ * - `status`: An instance of the ValidationStatus class that contains the
+ *             code, message and status of the validation process.
+ * - `descriptor`: The global identifier of the term corresponding to the value
+ *                 descriptor.
+ * - `changes`: During the validation process, if required, there can be cases
+ *              in which an enyumeration code may be resolved in case it does
+ *              not match exactly the full code: this field is an object that
+ *              logs such changes: `field` contains the descriptor global
+ *              identifier, `original` contains the original code and `resolved`
+ *              contains the resolved code.
+ * - Other members providing information on the eventual errors.
+ *
+ * A report whose `status.code` is `0` means that there was no error; the
+ * presence of the `changes` member indicates that some data was corrected.
+ * Any `status.code` value other than `0` is considered an error.
  */
 class ValidationReport
 {
 	/**
 	 * constructor
 	 *
-	 * The constructor instantiates an idle report.
+	 * The constructor instantiates a report by providing a status code and an
+	 * eventual descriptor global identifier.
 	 *
-	 * The method expects the status code and the descriptor global identifier.
+	 * By default, the constructor will instantiate an idle status without a
+	 * descriptor reference using the default language. If you provide a
+	 * descriptor reference, bear in mind that term references are not checked
+	 * here.
 	 *
-	 * @param theStatusCode
-	 * @param theDescriptor
+	 * @param theStatusCode {Number}: The status code.
+	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theLanguage {String}: The message language code.
 	 */
 	constructor(
 		theStatusCode = 'kOK',
-		theDescriptor = ''
+		theDescriptor = '',
+		theLanguage = module.context.configuration.language
 	){
 		///
 		// Create status entry.
 		///
-		this.status = new ValidationStatus(theStatusCode)
+		this.status = new ValidationStatus(theStatusCode, theLanguage)
 
 		///
 		// Set descriptor reference.
@@ -50,12 +71,12 @@ class ValidationReport
 /**
  * Class: ValidationStatus
  *
- * This class implements a status object that contains two elements: the
- * `statusCode` which is an integer holding the numeric code corresponding to
- * the current status, and `statusMessage` that contains a set of messages, each
- * in a different language, describing the current status. The messages in
- * different languages are implemented as the `_info` section elements of the
- * term record.
+ * This class implements a status report consisting of two members:
+ *
+ * - `code`: The status code.
+ * - `message`: The status message.
+ *
+ * A code of `0` indicates an idle status, any other value indicates an error.
  */
 class ValidationStatus
 {
@@ -67,39 +88,39 @@ class ValidationStatus
 	 * idle status.
 	 *
 	 * If the provided status code cannot be found, the constructor will raise
-	 * and exception.
+	 * and exception, so make tests before deploying validation procedures.
 	 *
-	 * @param theStatusCode {String}: The status code constant, default to `kIdle`.
-	 * @param theDefaultLanguage {string}: The default language for the status messages.
+	 * @param theCode {String}: The status code constant.
+	 * @param theLanguage {string}: The status message language.
 	 */
-	constructor(
-		theStatusCode = 'kOK',
-		theDefaultLanguage = module.context.configuration.language
-	){
+	constructor(theCode, theLanguage)
+	{
 		///
 		// Check status code.
 		///
-		if(!ValidationStatus.statusRecords.hasOwnProperty(theStatusCode)) {
+		if(!ValidationStatus.statusRecords.hasOwnProperty(theCode)) {
 			throw new Error(
-				`Accessing unknown status code: [${theStatusCode}].`
+				`Accessing unknown status code: [${theCode}].`
 			)                                                           // ==>
 		}
 
 		///
-		// Save status record.
+		// Select static status record.
 		///
-		const status = ValidationStatus.statusRecords[theStatusCode]
+		const status = ValidationStatus.statusRecords[theCode]
 
 		///
 		// Set status code.
 		///
-		this.statusCode = status.statusCode
+		this.code = status.statusCode
 
 		///
 		// Set status message.
+		// If provided language cannot be found, use default language.
+		// It is assumed that all messages have the default language version.
 		///
-		this.statusMessage = (status.statusMessage.hasOwnProperty(theDefaultLanguage))
-						   ? status.statusMessage[theDefaultLanguage]
+		this.message = (status.statusMessage.hasOwnProperty(theLanguage))
+						   ? status.statusMessage[theLanguage]
 						   : status.statusMessage[module.context.configuration.language]
 
 	} // constructor()
@@ -120,7 +141,7 @@ class ValidationStatus
 		"kEXPENTING_DATA_DIMENSION": {
 			"statusCode": -1,
 			"statusMessage": {
-				"iso_639_3_eng": `The provided descriptor lacks a required property in its data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\``
+				"iso_639_3_eng": `The provided descriptor has an invalid data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\`, but none provided.`
 			}
 		},
 		"kOK": {
@@ -160,7 +181,7 @@ class ValidationStatus
 		"kNOT_A_DESCRIPTOR": {
 			"statusCode": 5,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided term reference is not a descriptor."
+				"iso_639_3_eng": "The term reference is not a descriptor."
 			}
 		},
 		"kNOT_A_SCALAR": {
@@ -203,6 +224,12 @@ class ValidationStatus
 			"statusCode": 12,
 			"statusMessage": {
 				"iso_639_3_eng": "Value cannot be interpreted as a timestamp."
+			}
+		},
+		"kUNSUPPORTED": {
+			"statusCode": 13,
+			"statusMessage": {
+				"iso_639_3_eng": "The value does not correspond to a supported option."
 			}
 		}
 	}

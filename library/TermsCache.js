@@ -7,7 +7,7 @@
  * database cache and interface for accessing terms.
  *
  * All names are defined in the service settings, except default names, such as
- * the document key in ArangoDB, _key.
+ * the document key in ArangoDB, `_key`.
  */
 
 /**
@@ -107,12 +107,12 @@ class TermsCache
      * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
      * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
      *
-     * @return {Object}: The term record or `false` if the term does not exist.
+     * @return {Object|Boolean}: The term record or `false` if the term does not exist.
      */
     getTerm(
         theTermGID,
         doCache = true,
-        doMissing = true
+        doMissing = false
     ){
         ///
         // Check cache.
@@ -183,6 +183,44 @@ class TermsCache
     } // getTerm()
 
     /**
+     * getDescriptor
+     *
+     * This method can be used to retrieve a partial descriptor record given the
+     * term identifier.
+     *
+     * For the most part, this method uses the `getTerm()`, but if the resolved
+     * term does not feature a data section, this method will consider this an
+     * error and return `false`.
+     *
+     * The cache is consulted by this method.
+     *
+     * @param theTermGID {String}: The term global identifier (`_key`).
+     * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
+     * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
+     *
+     * @return {Object|Boolean}: The term record or `false` if the term does not
+     *                           exist or if the term is not a descriptor.
+     */
+    getDescriptor(
+        theTermGID,
+        doCache = true,
+        doMissing = false
+    ){
+        ///
+        // Resolve term.
+        ///
+        const term = this.getTerm(theTermGID, doCache, doMissing)
+        if(term !== false) {
+            if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
+                return false                                            // ==>
+            }
+        }
+
+        return term                                                     // ==>
+
+    } // getDescriptor()
+
+    /**
      * getTerms
      *
      * This method will return the list of term records corresponding to the
@@ -204,7 +242,7 @@ class TermsCache
     getTerms(
         TheTermGIDList,
         doCache = true,
-        doMissing = true
+        doMissing = false
     ){
         ///
         // Iterate list of term identifiers.
@@ -217,6 +255,43 @@ class TermsCache
         return result                                                   // ==>
 
     } // getTerms()
+
+    /**
+     * getDescriptors
+     *
+     * This method will return the list of descriptor records corresponding to
+     * the provided list of term global identifiers.
+     * The result will be a key/value dictionary in which each element will be
+     * the result of the `getDescriptor()` method applied to the current
+     * element.
+     *
+     * The method assumes the parameter to be an array of strings. If there are
+     * eventual duplicates in the string array, these will be reduces to a set.
+     *
+     * The cache is consulted by this method.
+     *
+     * @param TheTermGIDList {[String]}: The term global identifiers list.
+     * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
+     * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
+     *
+     * @return {Object}: Dictionary of matched terms.
+     */
+    getDescriptors(
+        TheTermGIDList,
+        doCache = true,
+        doMissing = false
+    ){
+        ///
+        // Iterate list of descriptor identifiers.
+        ///
+        const result = {}
+        TheTermGIDList.forEach( (term) => {
+            result[term] = this.getDescriptor(term, doCache, doMissing)
+        })
+
+        return result                                                   // ==>
+
+    } // getDescriptors()
 
 
     /**

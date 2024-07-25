@@ -167,9 +167,11 @@ router.get(
     'newValidationReport',
     function (req, res){
 
-        const status = req.queryParams.status
+        const status = req.queryParams.statusCode
         const descriptor = req.queryParams.descriptor
-        const report = new ValidationReport(status, descriptor)
+        const language = req.queryParams.language
+
+        const report = new ValidationReport(status, descriptor, language)
 
         res.send(report)
 
@@ -177,14 +179,19 @@ router.get(
     .summary('Test ValidationReport()')
     .description(dd`Create and inspect a validation report.`)
     .queryParam(
-        'status',
-        joi.string(),
+        'statusCode',
+        joi.string().default('kOK'),
         "Validation status ID"
     )
     .queryParam(
         'descriptor',
         joi.string(),
         "Descriptor global identifier"
+    )
+    .queryParam(
+        'language',
+        joi.string().default('iso_639_3_eng'),
+        "Status message language"
     )
     .response(
         joi.array(),
@@ -197,12 +204,13 @@ router.get(
 router.post(
     'validator',
     function (req, res){
-
         const validator =
             new Validator(
                 req.body,
                 req.queryParams.descriptor,
                 req.queryParams.doZip,
+                req.queryParams.doCache,
+                req.queryParams.doMissing,
                 req.queryParams.doResolve,
                 req.queryParams.resolveCode
             )
@@ -214,7 +222,7 @@ router.post(
     .description(dd`Test the Validator class constructor.`)
     .queryParam(
         'descriptor',
-        joi.string(),
+        joi.string().default(''),
         "Descriptor global identifier"
     )
     .queryParam(
@@ -223,9 +231,19 @@ router.post(
         "Associate descriptor to array of values"
     )
     .queryParam(
+        'doCache',
+        joi.boolean().default(true),
+        "Cache resolved terms"
+    )
+    .queryParam(
+        'doMissing',
+        joi.boolean().default(false),
+        "Cache unresolved terms"
+    )
+    .queryParam(
         'doResolve',
         joi.boolean().default(false),
-        "Resolve codes and preferred enumerations"
+        "Try resolving enumeration codes"
     )
     .queryParam(
         'resolveCode',
@@ -256,18 +274,25 @@ router.post(
                 req.body,
                 req.queryParams.descriptor,
                 req.queryParams.doZip,
+                req.queryParams.doCache,
+                req.queryParams.doMissing,
                 req.queryParams.doResolve,
                 req.queryParams.resolveCode
             )
 
-        res.send(validator)
+        const status = validator.validate()
+
+        res.send({
+            "status": status,
+            "validator": validator
+        })
 
     }, 'Validator::validate()')
     .summary('Test Validator::validate()')
     .description(dd`Test the validate() method.`)
     .queryParam(
         'descriptor',
-        joi.string(),
+        joi.string().default(''),
         "Descriptor global identifier"
     )
     .queryParam(
@@ -276,9 +301,19 @@ router.post(
         "Associate descriptor to array of values"
     )
     .queryParam(
+        'doCache',
+        joi.boolean().default(true),
+        "Cache resolved terms"
+    )
+    .queryParam(
+        'doMissing',
+        joi.boolean().default(false),
+        "Cache unresolved terms"
+    )
+    .queryParam(
         'doResolve',
         joi.boolean().default(false),
-        "Resolve codes and preferred enumerations"
+        "Try resolving enumeration codes"
     )
     .queryParam(
         'resolveCode',

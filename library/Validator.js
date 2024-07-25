@@ -5,81 +5,150 @@
 //
 const _ = require('lodash')
 
+///
+// Modules.
+///
+const TermsCache = require('./TermsCache')
+const ValidationReport = require('./ValidationReport')
+
 /**
  * Validator
  *
- * This file contains the Validator class which can be used to validate entries
- * data associated with data dictionary terms.
+ * This class instantiates an object that can be used to validate values
+ * associated to terms belonging to the data dictionary.
  *
- * The object is initialised by providing the value to be checked and,
- * eventually, the term global identifier of the descriptor corresponding to the
- * value.
+ * Once instantiated, you can call the validate() method that will check if
+ * the provided value respects the constraints defined in the data dictionary
+ * term that represents the value's descriptor.
  *
- * If the term reference was not provided, the value must be an object or an
- * array of objects; the objects cannot be empty. If the descriptor was
- * provided, the class validate() method can be called to perform the
- * validation.
+ * Some general rules:
  *
- * The result of the validation can be found in the `status` member of the
- * object. Status code 0 means that there were no errors.
- *
- * If you provided `true` to the `doResolve` parameter of the constructor,
- * when possible, values that do not match will try to be resolved, this
- * applies to time stamps, where string values will be interpreted, or for
- * enumerations, where values will be matched to the descriptor code section
- * property indicated in the constructor's `resolveCode`parameter. Enumerations
- * that have preferred values will also be resolved.
+ * - Objects cannot be empty.
+ * - The `null` value is not valid: either a property is filled or missing.
  */
-
-/**
- * Modules.
- */
-const TermsCache = require('./TermsCache')
-const ValidationReport = require('./ValidationReport')
-const validator = require("./Validator");
-
 class Validator
 {
 	/**
 	 * Constructor
 	 *
-	 * The constructor expects the value to be validated and the eventual
-	 * descriptor of the value. If you omit the descriptor, the value is
-	 * assumed to either be an object, whose properties will be validated, or
-	 * an array of such objects. An exception will be raised if the value does
-	 * not conform or if the eventual provided term reference cannot be
-	 * resolved, or if the resolved term is not a descriptor.
+	 * The constructor expects the following parameters:
 	 *
-	 * The constructor will initialise three members:
+	 * - `theValue`: The value to be checked. It can be of any type if you
+	 *               also provide the descriptor, or it must be either an
+	 *               object or an array of objects if you omit the descriptor.
+	 *               Note that `null` or an empty object are considered an
+	 *               error and the constructor will fail raising an exception.
+	 * - `theTerm`: The global identifier of the term representing the value
+	 *              descriptor. If the term cannot be referenced, or if the term
+	 *              is not a descriptor, the constructor will raise an
+	 *              exception. The term can be omitted, in which case the value
+	 *              must either be an object or an array of objects: the
+	 *              validation will scan all object properties and check those
+	 *              properties that correspond to data dictionary descriptor
+	 *              terms. Note that *any property matching a dictionary term*
+	 *              will be expected to be a descriptor.
+	 * - `doZip`: This boolean flag indicates whether all values should be
+	 *            matched with the provided descriptor. If set, the value *must
+	 *            be an array* and all elements of the array will be validated
+	 *            against the provided descriptor. If set, and no descriptor was
+	 *            provided, or if the value is not an array, the constructor
+	 *            will raise an exception.
+	 * - `doCache`: This boolean flag can be used to force caching of all
+	 *              resolved terms. If false, no terms will be cached. This
+	 *              value is passed to all TermsCache methods.
+	 * - `doMissing`: This boolean flag is related to the `doCache` flag and is
+	 *                only used if the cache flag is set. If this flag is set,
+	 *                terms that were not resolved will also be set with a
+	 *                `false` value; if this flag is not set, only resolved
+	 *                terms will be cached. This flag can be useful when objects
+	 *                contain a consistent set of properties that should be
+	 *                checked.
+	 * - `doResolve`: There are cases in which values are not fully compliant:
+	 *                you could have provided the local identifier of an
+	 *                enumeration or a string to be converted into a timestamp,
+	 *                in these cases the validation process can resolve these
+	 *                values. If this flag is set: if an enumeration code
+	 *                doesn't match, the validator will check if the provided
+	 *                value matches a property in the code section of the term
+	 *                and is an element of the descriptor's enumeration type: if
+	 *                that is the case, the value will be replaced with the
+	 *                correct entry and no error issued. All resolved values are
+	 *                logged in the `resolved` data member.
+	 * - `resolveCode`: This parameter is linked to the previous flag: if the
+	 *                  `doResolve` flag is set, this parameter allows you to
+	 *                  indicate which terms code section field should be
+	 *                  searched for matching the code in the value. By default,
+	 *                  the local identifier, `_lid`, is searched, but this
+	 *                  field allows you to search others, such as official
+	 *                  identifiers, `_aid`.
 	 *
-	 * - `cache` It implements the database interface and the cache.
-	 * - `report`: It contains the status report.
-	 * - `value`: The value to be validated.
-	 * - `term`: The eventual descriptor record.
-	 * - `zip`: A flag indicating whether to zip the descriptor to the array
-	 * elements.
-	 * - `resolve`: Resolve values flag.
-	 * - `codes`: Code section property to probe when resolving enumerations.
+	 * The provided parameters will be checked and set in the object that will
+	 * feature the following members:
 	 *
-	 * @param theValue {Array|Object|Number|String}: The value to be validated.
-	 * @param theTerm {String}: The descriptor of the value, use empty string to
-	 * ignore.
-	 * @param doZip {Boolean}: If true, the descriptor is required and the value
-	 * must be an array of objects: the descriptor applies to each element of
-	 * the array.
-	 * @param doResolve {Boolean}: If set, eventual resolved values will be
-	 * updated in the original object.
-	 * @param resolveCode {String}: Which code section property to probe when
-	 * trying to resolve terms, only for enumerations (default to local
-	 * identifier).
+	 * - `value`: Will receive `theValue`.
+	 * - `term`: Will receive the term record corresponding to `theTerm`.
+	 * - `cache`: Will receive the TermsCache object implementing the interface
+	 *            to the data dictionary database.
+	 * - `zip`: Will receive the `doZip` flag.
+	 * - `resolve`: Will receive the `doResolve` flag.
+	 * - `resolver`: Will receive the `resolveCode` value.
+	 * - `resolved`: Will receive eventual resolved values log.
+	 * - `useCache`: Will receive the `doCache` flag.
+	 * - `cacheMissing`: Will receive the `doMissing` flag.
+	 * - `language`: Will receive the language provided in validate() for report
+	 *               messages.
+	 *
+	 * If you want to check a specific value, provide the value and descriptor.
+	 * If you want to check a list of values of the same type, provide the list
+	 * of values, the descriptor and set the `doZip` flag.
+	 * If you want to check the properties of an object, provide the object in
+	 * `theValue` and omit the descriptor.
+	 * If you want to check the properties of a list of objects provide an array
+	 * of objects in `theValue` and omit the descriptor.
+	 * If you want to check a set of key/value pairs, provide a dictionary as
+	 * the value and omit the descriptor.
+	 *
+	 * All terms read from the database are cached in the `cache` data member,
+	 * the cached record will only hold the `_key`, data and rule term sections,
+	 * and the`_path` property of the edge in which the term is the relationship
+	 * origin.
+	 *
+	 * Note that the validation report is not initialised here, it will be set
+	 * in the validate() method in order to match the value dimensions.
+	 *
+	 * To trigger validation, once instantiated, call the validate() method.
+	 *
+	 * @param theValue {Array|Object|Number|String}: The value to be checked.
+	 * @param theTerm {String}: The descriptor global identifier, defaults to
+	 *                          an empty string (no descriptor).
+	 * @param doZip {Boolean}: If true, match the descriptor with each element
+	 *                         of the provided list of values, defaults to
+	 *                         false.
+	 * @param doCache {Boolean}: Flag for caching terms, defaults to true.
+	 * @param doMissing {Boolean}: Flag for caching non resolved terms, defaults
+	 *                             to false.
+	 * @param doResolve {Boolean}: If true, resolve timestamps and eventual
+	 *                             unmatched enumerations, defaults to false.
+	 * @param resolveCode {String}: If doResolve is set, provide the term code
+	 *                              section property name where to match codes,
+	 *                              defaults to the local identifier code,
+	 *                              `_lid`.
 	 */
 	constructor(
 		theValue,
 		theTerm = '',
 		doZip = false,
+		doCache = true,
+		doMissing = false,
 		doResolve = false,
 		resolveCode = module.context.configuration.localIdentifier
 	){
+		///
+		// Init value.
+		// We are optimistic.
+		///
+		this.value = theValue
+
 		///
 		// Init cache.
 		///
@@ -90,14 +159,20 @@ class Validator
 		///
 		this.zip = doZip
 		this.resolve = doResolve
-		this.codes = resolveCode
+		this.resolver = resolveCode
+		this.useCache = doCache
+		this.cacheMissing = doMissing
 
 		///
-		// Init descriptor.
+		// Handle descriptor.
 		///
 		if(theTerm.length > 0)
 		{
-			const term = this.getDescriptor(theTerm, true, false)
+			///
+			// Resolve term.
+			///
+			const term =
+				this.cache.getDescriptor(theTerm, this.useCache, this.cacheMissing)
 			if(term === false)
 			{
 				throw new Error(
@@ -131,68 +206,37 @@ class Validator
 		else
 		{
 			///
-			// Assert non-empty object.
-			//
-			if(Validator.IsObject(theValue))
-			{
-				if(Object.keys(theValue).length === 0)
-				{
-					throw new Error(
-						"Value provided is an empty object."
-					)                                                   // ==>
-				}
-
-			} // Provided an object.
-
+			// Handle array.
 			///
-			// Assert non-empty array of objects.
-			///
-			else if(Validator.IsArray(theValue))
-			{
-				theValue.forEach( (item) =>
-				{
-					if (Validator.IsObject(item))
-					{
-						if (Object.keys(item).length === 0)
-						{
-							throw new Error(
-								"Found an empty object among array elements."
-							)                                           // ==>
-						}
-					}
-					else
-					{
+			if(Validator.IsArray(theValue)) {
+				theValue.forEach( (item) => {
+					if(!Validator.IsObject(item)) {
 						throw new Error(
-							"Found an array element that is not an object."
+							"Expecting an array of objects: you provided a different element."
 						)                                               // ==>
 					}
 				})
-
-			} // Provided an array.
-
-			else {
-				throw new Error(
-					"Expecting either an object or an array of objects."
-				)                                                       // ==>
-
-			} // Provided a non-object scalar.
+			}
 
 			///
-			// Assert no zip.
+			// Handle object.
 			///
-			if(doZip) {
-				throw new Error(
-					"Zip flag is set, but no descriptor was provided."
-				)                                                       // ==>
+			else
+			{
+				if(doZip) {
+					throw new Error(
+						"To zip you must provide the descriptor."
+					)                                                   // ==>
+				}
 
-			} // Set zip flag.
+				if(!Validator.IsObject(theValue)) {
+					throw newException(
+						"You did not provide a descriptor: we expect either an array of objects or an object."
+					)                                                   // ==>
+				}
+			}
 
 		} // No descriptor provided.
-
-		///
-		// Init value.
-		///
-		this.value = theValue
 
 	} // constructor()
 
@@ -203,39 +247,59 @@ class Validator
 	 * return a boolean indicating whether the validation succeeded, `true`, or
 	 * failed, `false`.
 	 *
-	 * The outcome of the validation will be published in the `report` data
-	 * member: a status code of `0` indicates an idle status, any other value
-	 * means there was an error. Eventual resolved values will be listed in the
-	 * `resolved` data member which is an array of objects containing three
-	 * properties: `descriptor` contains the descriptor key, `old` contains the
-	 * original value and `resolved` contains the resolved value. If the
-	 * property exists it means there were resolutions.
+	 * The method handles the following object configurations:
+	 *
+	 * - Zipped: the value is an array of values and the descriptor was
+	 *           provided.
+	 * - Objects array: and array of objects wasprovided without a descriptor.
+	 * - Object: an object was provided without descriptor.
+	 * - Descriptor and value: both descriptor and value were provided.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
 	 *
+	 * @param theLanguage {String}: Language code for report messages, defaults
+	 *                              to default language.
+	 *
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	validate()
+	validate(theLanguage = module.context.configuration.language)
 	{
+		///
+		// Set used language.
+		///
+		this.language = theLanguage
+
 		///
 		// Handle zipped data.
 		///
-		if(this.hasOwnProperty('zip'))
+		if(this.zip) {
+			return this.validateZipped()                                // ==>
+		}
+
+		///
+		// Handle no descriptor.
+		///
+		if(!this.hasOwnProperty('term'))
 		{
-			this.report = []
-			[Array(this.value.length).keys()].forEach( (index) => {
-				this.report[index] = new ValidationReport()
-				this.validateValueType(
-					this.value[index],
-					this.term,
+			///
+			// Array of objects.
+			///
+			if(Validator.IsArray(this.value)) {
+				return this.validateObjects()                           // ==>
+			}
 
-				)
-			})
+			///
+			// Object.
+			///
+			if(Validator.IsObject(this.value)) {
+				return this.validateObject(this.value)                  // ==>
+			}
 
-		} // Zipped data.
-
-		return true;                                                    // ==>
+			throw new Error(
+				"Unchecked case: when omitting the descriptor, the value must be either an object or an array of objects."
+			)                                                           // ==>
+		}
 
 	} // validate()
 
@@ -246,50 +310,208 @@ class Validator
 
 
 	/**
-	 * validateValue
+	 * validateZipped
 	 *
-	 * This method will validate the value/descriptore pair constituted by the
-	 * provided descriptor term record and the value to be validated.
+	 * This method expects the value to be an array and it expects the
+	 * descriptor to have been provided. The method will iterate the list of
+	 * values matching the provided descriptor to each one.
 	 *
-	 * If the descriptor was provided as a termglobal identifier, it will be
-	 * resolved. If the term does not exist, or if the identifier references a
-	 * term that is not a descriptor, the method will return an error.
+	 * The `report` data member of the current object will be an array
+	 * containing a status report for each checked value. Note that if you
+	 * instantiated this object with the `doResolve` flag set, some values you
+	 * provided might have been modified: if the corresponding status report has
+	 * a `resolved` member, it means that there were modifications.
 	 *
-	 * The method returns a boolean: `true` means the validation was successful,
-	 * if the validation failed, the method will return `false`.
+	 * The method assumes the `zip` flag to be set and all parameters to have
+	 * been previously checked.
 	 *
-	 * @param theValue {String|Number|Object|Array}: The descriptor value.
-	 * @param theDescriptor {String|Object}: The descriptor global identifier or
-	 * term record.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * The method will return true if no errors occurred, or false if at least
+	 * one error occurred.
+	 *
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	validateValue(theValue, theDescriptor, theParent = null)
+	validateZipped()
 	{
 		///
-		// Locate descriptor.
+		// Init local storage.
 		///
-		if(!Validator.IsObject(theDescriptor)) {
-			const descriptor =
-				this.getDescriptor(
-					theDescriptor,
-					true,
-					false,
-					theParent
+		let status = true
+		const section = this.term[module.context.configuration.sectionData]
+
+		///
+		// Instantiate report.
+		///
+		this.report = []
+
+		///
+		// Iterate value elements.
+		///
+		this.value.forEach( (value, index) =>
+		{
+			///
+			// Init current value status report.
+			///
+			this.report[index] =
+				new ValidationReport(
+					'kOK', this.term._key, this.language
 				)
-			if(descriptor === false) {
+
+			///
+			// Validate.
+			///
+			if(!this.doValidateDimension(this.value, this.term, section, index)) {
+				status = false
+			}
+		})
+
+		return status                                                   // ==>
+
+	} // validateZipped()
+
+	/**
+	 * validateObjects
+	 *
+	 * This method expects an objects array as value, the method will iterate
+	 * each object and feed it to the `validateObject()` method that will take
+	 * care of validating it.
+	 *
+	 * The method will return true if no errors occurred, or false if at least
+	 * one error occurred.
+	 *
+	 * @return {Boolean}: `true` means valid, `false` means error.
+	 */
+	validateObjects()
+	{
+		///
+		// Init local storage.
+		///
+		let status = true
+
+		///
+		// Instantiate report.
+		///
+		this.report = []
+
+		///
+		// Iterate value elements.
+		///
+		this.value.forEach( (value, index) =>
+		{
+			///
+			// Handle object.
+			///
+			if(Validator.IsObject(value)) {
+				if(!this.validateObject(this.value[index], index)) {
+					status = false
+				}
+			}
+			else
+			{
+				this.report.value = value
+				this.report[index] =
+					new ValidationReport(
+						'kNOT_AN_OBJECT', '', this.language
+					)
+
 				return false                                            // ==>
 			}
+		})
+
+		return status                                                   // ==>
+
+	} // validateObjects()
+
+	/**
+	 * validateObject
+	 *
+	 * This method expects the value to be an object, the method will traverse
+	 * the object's properties matching the property name to known terms, if the
+	 * property matches a descriptor term, the value will be validated. If the
+	 * matched term is not a descriptor, an error will be raised.
+	 *
+	 * The method assumes you provide an object.
+	 *
+	 * The method will return true if no errors occurred, or false if at least
+	 * one error occurred.
+	 *
+	 * @param theContainer {Object}: The object to be checked.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` means valid, `false` means error.
+	 */
+	validateObject(theContainer, theReportIndex = null)
+	{
+		///
+		// Init local storage.
+		///
+		let status = true
+
+		///
+		// Init current status report.
+		///
+		const report =
+			new ValidationReport(
+				'kOK', '', this.language
+			)
+		if(theReportIndex === null) {
+			this.report = report
+		} else {
+			this.report[theReportIndex] = report
 		}
 
 		///
-		// Handle descriptor type.
+		// Traverse object.
 		///
-		return this.validateValueType(
-			theValue, descriptor, theParent
-		)                                                               // ==>
+		Object.keys(theContainer).some( (property) => {
 
-	} // validateValue()
+			///
+			// Resolve property.
+			///
+			const term =
+				this.cache.getTerm(
+					property, this.useCache, this.cacheMissing
+				)
+
+			///
+			// Skip unknown symbols.
+			///
+			if(term === false) {
+				return false
+			}
+
+			///
+			// Assert term is a descriptor.
+			///
+			if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
+				const report =
+					new ValidationReport(
+						'kNOT_A_DESCRIPTOR', term._key, this.language
+					)
+
+				if(theReportIndex !== null) {
+					this.report[theReportIndex] = report
+				} else {
+					this.report = report
+				}
+
+				status = false
+				return true
+			}
+
+			///
+			// Validate property/value pair.
+			///
+			if(!this.doValidateDimension(theContainer, term, this.term[module.context.configuration.sectionData], theReportIndex)) {
+				status = false
+				return true
+			}
+
+			return false
+		})
+
+		return status                                                   // ==>
+
+	} // validateObject()
 
 
 	/**
@@ -298,274 +520,98 @@ class Validator
 
 
 	/**
-	 * validateObject
-	 *
-	 * Use this method to validate the provided object, all properties that are
-	 * known terms will be considered descriptors and their values checked.
-	 *
-	 * The outcome of the validation will be published in the `report` data
-	 * member. If the validation failed, the report might also hold data members
-	 * referencing parts of the offending values.
-	 *
-	 * The method returns a boolean: `true` means the validation was successful,
-	 * if the validation failed, the method will return `false`.
-	 *
-	 * @param theValue {Object}: Object to validate.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Boolean}: `true` means valid, `false` means error.
-	 */
-	validateObject(theParent = null)
-	{
-		///
-		// Handle object.
-		///
-		if(Validator.IsObject(theValue))
-		{
-			///
-			// Assert not empty.
-			///
-			if(Object.keys(theValue).length === 0) {
-				this.report = new ValidationReport('kEMPTY_OBJECT')
-				if(theParent !== null) {
-					this.report.parentValue = theParent
-				}
-				this.report.value = theValue
-
-				return false                                            // ==>
-			}
-
-			///
-			// Iterate object properties.
-			///
-			Object.keys(theValue).some( (key) => {
-				return this.validateValue(key, theValue[key])
-			})
-
-			return this.report.statusCode === 0                         // ==>
-
-		} // Value is an object.
-
-		this.report = new ValidationReport('kNOT_AN_OBJECT')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
-		}
-		this.report.value = theValue
-
-		return false                                                    // ==>
-
-	} // validateObject()
-
-	/**
-	 * validateObjects
-	 *
-	 * Use this method to validate the provided list of objects. Each element of
-	 * the provided list is expected to be an object and each property that is a
-	 * known terms will be considered a descriptor and their values checked.
-	 *
-	 * The outcome of the validation will be published in the `report` data
-	 * member. If the validation failed, the report might also hold data members
-	 * referencing parts of the offending values.
-	 *
-	 * The method returns a boolean: `true` means the validation was successful,
-	 * if the validation failed, the method will return `false`.
-	 *
-	 * @param theValues {[Object]}: The object value.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Boolean}: `true` means valid, `false` means error.
-	 */
-	validateObjects(theValues, theParent = null)
-	{
-		///
-		// Handle array of objects.
-		///
-		if(Validator.IsArray(theValues))
-		{
-			theValues.some( (item) => {
-				return this.validateObject(item, theValues)
-			})
-
-			return this.report.statusCode === 0                         // ==>
-
-		} // Value is an array.
-
-		this.report = new ValidationReport('kNOT_AN_ARRAY')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
-		}
-		this.report.value = theValues
-
-		return false                                                    // ==>
-
-	} // validateObjects()
-
-	/**
-	 * validateObjectList
-	 *
-	 * Use this method to validate the provided list of objects against the
-	 * provided descriptor. Each element of the provided list is expected to be
-	 * an object belonging to the provided descriptor, and each property that is
-	 * a known terms will be considered a descriptor and their values checked.
-	 *
-	 * The outcome of the validation will be published in the `report` data
-	 * member. If the validation failed, the report might also hold data members
-	 * referencing parts of the offending values.
-	 *
-	 * The method returns a boolean: `true` means the validation was successful,
-	 * if the validation failed, the method will return `false`.
-	 *
-	 * @param theValues {[Object]}: The object value.
-	 * @param theDescriptor {String}: The descriptor global identifier.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Boolean}: `true` means valid, `false` means error.
-	 */
-	validateObjectList(theValues, theDescriptor, theParent = null)
-	{
-		///
-		// Locate descriptor.
-		///
-		const descriptor =
-			this.getDescriptor(
-				theDescriptor,
-				true,
-				true,
-				false,
-				theParent
-			)
-		if(descriptor === false) {
-			return false                                                // ==>
-		}
-
-		///
-		// Handle array of objects.
-		///
-		if(Validator.IsArray(theValues))
-		{
-			theValues.some( (item) => {
-				return this.validateValue(theValues, item, theParent)
-			})
-
-			return this.report.statusCode === 0                         // ==>
-
-		} // Value is an array.
-
-		this.report = new ValidationReport('kNOT_AN_ARRAY')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
-		}
-		this.report.value = theValues
-
-		return false                                                    // ==>
-
-	} // validateObjectList()
-
-	/**
-	 * validateDescriptor
+	 * doValidateDimension
 	 *
 	 * This method will validate the key/value pair constituted by the provided
 	 * descriptor and the provided value.
 	 *
-	 * If the descriptor does *not correspond* to any existing terms, the value
-	 * will be considered *incorrect*.
+	 * The provided descriptor is expected to be a resolved descriptor term.
 	 *
-	 * The method returns a boolean: `true` means the validation was successful,
-	 * if the validation failed, the method will return `false`.
-	 *
-	 * @param theValue {String|Number|Object|Array}: The descriptor value.
-	 * @param theDescriptor {String}: The descriptor global identifier.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Boolean}: `true` means valid, `false` means error.
-	 */
-	validateDescriptor(theValue, theDescriptor, theParent = null)
-	{
-		///
-		// Locate descriptor.
-		///
-		const descriptor =
-			this.getDescriptor(
-				theDescriptor,
-				true,
-				false,
-				theParent
-			)
-		if(descriptor === false) {
-			return false                                                // ==>
-		}
-
-		///
-		// Check data type.
-		///
-		return this.validateValueType(
-			theValue, descriptor, theParent
-		)                                                               // ==>
-
-	} // validateDescriptor()
-
-	/**
-	 * validateValueType
-	 *
-	 * This method will validate the key/value pair constituted by the provided
-	 * descriptor and the provided value.
-	 *
-	 * The provided descriptor is expected to be a valid term, and the term must
-	 * feature the data section, thus be a descriptor.
-	 *
-	 * The method will scan the term data section resolving the eventual
+	 * The method will scan the descriptor data section resolving the eventual
 	 * container types until it reaches the scalar dimension, where it will
-	 * check the value's data type.
+	 * check the value's data type and return the status.
+	 *
+	 * The method expects the following parameters:
+	 *
+	 * - `theContainer`: The container of the value.
+	 * - `theDescriptor`: The term record corresponding to the descriptor. The
+	 *                    term `_key` is the key to access the value in the
+	 *                    container.
+	 * - `theSection`: The term data section corresponding to the current
+	 *                 dimension. As we traverse nested containers, this will be
+	 *                 the data section corresponding to the current container.
+	 * - `theReportIndex`: The eventual index of the current report. This is
+	 *                     used when validate() was called on an array of
+	 *                     values: for each value a report is created in the
+	 *                     current object, so each value can be evaluated. If
+	 *                     the value is a scalar, provide `null` here.
 	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
 	 *
-	 * @param theValue {String|Number|Object|Array}: The descriptor value.
+	 * @param theContainer {String|Number|Object|Array}: The value container.
 	 * @param theDescriptor {Object}: The descriptor term record.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	validateValueType(theValue, theDescriptor, theParent = null)
+	doValidateDimension(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex = null)
 	{
 		///
 		// Traverse data section.
+		// We know the descriptor has the data section.
 		///
-		const dataSection = theDescriptor[module.context.configuration.sectionData]
-		if(dataSection.hasOwnProperty(module.context.configuration.sectionScalar)) {
-			return this.validateScalar(
-				theValue,
-				theDescriptor._key,
-				dataSection[module.context.configuration.sectionScalar],
-				theParent
+		if(theSection.hasOwnProperty(module.context.configuration.sectionScalar)) {
+			return this.doValidateScalar(
+				theContainer,
+				theDescriptor,
+				theSection[module.context.configuration.sectionScalar],
+				theReportIndex
 			)                                                           // ==>
-		} else if(dataSection.hasOwnProperty(module.context.configuration.sectionArray)) {
-			return this.validateArray(
-				theValue,
-				theDescriptor._key,
-				dataSection[module.context.configuration.sectionArray],
-				theParent
+		} else if(theSection.hasOwnProperty(module.context.configuration.sectionArray)) {
+			return this.doValidateArray(
+				theContainer,
+				theDescriptor,
+				theSection[module.context.configuration.sectionArray],
+				theReportIndex
 			)                                                           // ==>
-		} else if(dataSection.hasOwnProperty(module.context.configuration.sectionSet)) {
-			return this.validateSet(
-				theValue,
-				theDescriptor._key,
-				dataSection[module.context.configuration.sectionSet],
-				theParent
+		} else if(theSection.hasOwnProperty(module.context.configuration.sectionSet)) {
+			return this.doValidateSet(
+				theContainer,
+				theDescriptor,
+				theSection[module.context.configuration.sectionSet],
+				theReportIndex
 			)                                                           // ==>
-		} else if(dataSection.hasOwnProperty(module.context.configuration.sectionDict)) {
-			return this.validateDict(
-				theValue,
-				theDescriptor._key,
-				dataSection[module.context.configuration.sectionDict],
-				theParent
+		} else if(theSection.hasOwnProperty(module.context.configuration.sectionDict)) {
+			return this.doValidateDict(
+				theContainer,
+				theDescriptor,
+				theSection[module.context.configuration.sectionDict],
+				theReportIndex
 			)                                                           // ==>
 		}
 
-		this.report = new ValidationReport('kEXPENTING_DATA_DIMENSION')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		const report =
+			new ValidationReport(
+				'kEXPENTING_DATA_DIMENSION', theDescriptor._key, this.language
+			)
+
+		report.value = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.value = theDescriptor
 
 		return false                                                    // ==>
 
-	} // validateValueType()
+	} // doValidateDimension()
 
 
 	/**
@@ -574,25 +620,31 @@ class Validator
 
 
 	/**
-	 * validateScalar
+	 * doValidateScalar
 	 *
 	 * This method will check if the value is a scalar and then attempt to
 	 * check if the value corresponds to the declared data type.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateScalar(theValue, theDescriptor, theSection, theParent)
+	doValidateScalar(theContainer, theDescriptor, theSection, theReportIndex)
 	{
 		///
-		// Handle scalar.
+		// Init local storage.
 		///
-		if(!Validator.IsArray(theValue))
+		let report = {}
+
+		///
+		// Assert scalar.
+		///
+		if(!Validator.IsArray(theContainer[theDescriptor._key]))
 		{
 			///
 			// Handle type.
@@ -602,27 +654,26 @@ class Validator
 				///
 				// Parse data type.
 				///
-				let pass = true
 				switch(theSection[module.context.configuration.scalarType])
 				{
 					case module.context.configuration.typeBoolean:
-						return this.validateBoolean(
-							theValue, theDescriptor, theSection, theParent
+						return this.doValidateBoolean(
+							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeInteger:
-						return this.validateInteger(
-							theValue, theDescriptor, theSection, theParent
+						return this.doValidateInteger(
+							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeNumber:
-						return this.validateNumber(
-							theValue, theDescriptor, theSection, theParent
+						return this.doValidateNumber(
+							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeTypestamp:
-						return this.validateTimestamp(
-							theValue, theDescriptor, theSection, theParent
+						return this.doValidateTimeStamp(
+							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeString:
@@ -651,40 +702,49 @@ class Validator
 
 				} // Parsing data type.
 
-				if(theParent !== null) {
-					this.report.parentValue = theParent
+				///
+				// Unsupported data type.
+				///
+				report =
+					new ValidationReport(
+						'kUNSUPPORTED', theDescriptor._key, this.language
+					)
+
+				report.value = theSection
+
+				if(theReportIndex !== null) {
+					this.report[theReportIndex] = report
+				} else {
+					this.report = report
 				}
-				this.report.descriptor = theDescriptor
-				this.report.value = theValue
 
 				return false                                            // ==>
 
 			} // Has data type.
 
-			this.report = new ValidationReport('kMISSING_SCALAR_DATA_TYPE')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
-			}
-			this.report.descriptor = theDescriptor
-			this.report.value = theSection
-
-			return false                                                // ==>
+			return true                                                 // ==>
 
 		} // Is a scalar.
 
-		this.report = new ValidationReport('kNOT_A_SCALAR')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		report =
+			new ValidationReport(
+				'kNOT_A_SCALAR', theDescriptor._key, this.language
+			)
+
+		this.report.value = theContainer
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
-	} // validateScalar()
+	} // doValidateScalar()
 
 	/**
-	 * validateArray
+	 * doValidateArray
 	 *
 	 * This method will check if the value is an array, and then it will
 	 * traverse the data definition until it finds a scalar type.
@@ -697,15 +757,15 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateArray(theValue, theDescriptor, theSection, theParent)
+	doValidateArray(theValue, theDescriptor, theSection, theParent)
 	{
 
 		return true                                                    // ==>
 
-	} // validateArray()
+	} // doValidateArray()
 
 	/**
-	 * validateSet
+	 * doValidateSet
 	 *
 	 * This method will check if the value is an array of unique values, and
 	 * then it will pass the value to a method that will validate the scalar
@@ -719,12 +779,12 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateSet(theValue, theDescriptor, theSection, theParent)
+	doValidateSet(theValue, theDescriptor, theSection, theParent)
 	{
 
 		return true                                                    // ==>
 
-	} // validateSet()
+	} // doValidateSet()
 
 	/**
 	 * validateDict
@@ -745,7 +805,7 @@ class Validator
 
 		return true                                                    // ==>
 
-	} // validateSet()
+	} // doValidateSet()
 
 
 	/**
@@ -754,7 +814,7 @@ class Validator
 
 
 	/**
-	 * validateBoolean
+	 * doValidateBoolean
 	 *
 	 * This method will validate the provided boolean value.
 	 *
@@ -768,7 +828,7 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateBoolean(theValue, theDescriptor, theSection, theParent)
+	doValidateBoolean(theValue, theDescriptor, theSection, theParent)
 	{
 		///
 		// Check if boolean.
@@ -786,10 +846,10 @@ class Validator
 
 		return false                                                    // ==>
 
-	} // validateBoolean()
+	} // doValidateBoolean()
 
 	/**
-	 * validateInteger
+	 * doValidateInteger
 	 *
 	 * This method will validate the provided integer value.
 	 *
@@ -804,7 +864,7 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateInteger(theValue, theDescriptor, theSection, theParent)
+	doValidateInteger(theValue, theDescriptor, theSection, theParent)
 	{
 		///
 		// Check if integer.
@@ -827,10 +887,10 @@ class Validator
 
 		return false                                                    // ==>
 
-	} // validateInteger()
+	} // doValidateInteger()
 
 	/**
-	 * validateNumber
+	 * doValidateNumber
 	 *
 	 * This method will validate the provided number value.
 	 *
@@ -845,7 +905,7 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateNumber(theValue, theDescriptor, theSection, theParent)
+	doValidateNumber(theValue, theDescriptor, theSection, theParent)
 	{
 		///
 		// Check if integer.
@@ -868,10 +928,10 @@ class Validator
 
 		return false                                                    // ==>
 
-	} // validateNumber()
+	} // doValidateNumber()
 
 	/**
-	 * validateTimestamp
+	 * doValidateTimeStamp
 	 *
 	 * This method will validate the provided timestamp value.
 	 *
@@ -889,7 +949,7 @@ class Validator
 	 * @param theParent {Array|Object}: Parent value, defaults to null.
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateTimestamp(theValue, theDescriptor, theSection, theParent)
+	doValidateTimeStamp(theValue, theDescriptor, theSection, theParent)
 	{
 		///
 		// Check if UNIX timestamp.
@@ -924,7 +984,7 @@ class Validator
 
 		return false                                                    // ==>
 
-	} // validateTimestamp()
+	} // doValidateTimeStamp()
 
 
 	/**
