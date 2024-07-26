@@ -103,7 +103,6 @@ class Validator
 	 * - `zip`: Will receive the `doZip` flag.
 	 * - `resolve`: Will receive the `doResolve` flag.
 	 * - `resolver`: Will receive the `resolveCode` value.
-	 * - `resolved`: Will receive eventual resolved values log.
 	 * - `useCache`: Will receive the `doCache` flag.
 	 * - `cacheMissing`: Will receive the `doMissing` flag.
 	 * - `expectTerms`: Will receive thw `doOnlyTerms` flag.
@@ -370,15 +369,9 @@ class Validator
 		this.value.forEach( (value, index) =>
 		{
 			///
-			// Init current value status report.
+			// Init idle status report.
 			///
-			this.report[index] =
-				new ValidationReport(
-					'kOK',
-					this.term._key,
-					null,
-					this.language
-				)
+			this.setStatusReport('kOK', this.term_key, null, index)
 
 			///
 			// Validate.
@@ -399,6 +392,9 @@ class Validator
 	 * each object and feed it to the `validateObject()` method that will take
 	 * care of validating it.
 	 *
+	 * This method will initialise the reports container, but will not set the
+	 * idle status, this will be done by the validateObject() method.
+	 *
 	 * The method will return true if no errors occurred, or false if at least
 	 * one error occurred.
 	 *
@@ -413,6 +409,7 @@ class Validator
 
 		///
 		// Instantiate report.
+		// Note that we do not initialise the status here.
 		///
 		this.report = []
 
@@ -431,15 +428,12 @@ class Validator
 			}
 			else
 			{
-				this.report[index] =
-					new ValidationReport(
-						'kNOT_AN_OBJECT',
-						'',
-						value,
-						this.language
-					)
-
-				return false                                            // ==>
+				return this.setStatusReport(
+					'kNOT_AN_OBJECT',
+					'',
+					value,
+					index
+				)                                                       // ==>
 			}
 		})
 
@@ -473,20 +467,9 @@ class Validator
 		let status = true
 
 		///
-		// Init current status report.
+		// Init current idle status report.
 		///
-		const report =
-			new ValidationReport(
-				'kOK',
-				'',
-				null,
-				this.language
-			)
-		if(theReportIndex === null) {
-			this.report = report
-		} else {
-			this.report[theReportIndex] = report
-		}
+		this.setStatusReport('kOK', '', null, theReportIndex)
 
 		///
 		// Traverse object.
@@ -506,21 +489,13 @@ class Validator
 			///
 			if(term === false) {
 				if(this.expectTerms) {
-					const report =
-						new ValidationReport(
-							'kUNKNOWN_TERM',
-							property,
-							theContainer[property],
-							this.language
-						)
+					status = this.setStatusReport(
+						'kUNKNOWN_TERM',
+						property,
+						theContainer[property],
+						theReportIndex
+					)
 
-					if(theReportIndex !== null) {
-						this.report[theReportIndex] = report
-					} else {
-						this.report = report
-					}
-
-					status = false
 					return true
 				}
 
@@ -531,21 +506,13 @@ class Validator
 			// Assert term is a descriptor.
 			///
 			if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
-				const report =
-					new ValidationReport(
-						'kNOT_A_DESCRIPTOR',
-						term._key,
-						theContainer[property],
-						this.language
-					)
+				status = this.setStatusReport(
+					'kNOT_A_DESCRIPTOR',
+					property,
+					theContainer,
+					theReportIndex
+				)
 
-				if(theReportIndex !== null) {
-					this.report[theReportIndex] = report
-				} else {
-					this.report = report
-				}
-
-				status = false
 				return true
 			}
 
@@ -586,6 +553,8 @@ class Validator
 	 * The method will scan the descriptor data section resolving the eventual
 	 * container types until it reaches the scalar dimension, where it will
 	 * check the value's data type and return the status.
+	 *
+	 * The method assumes the default idle status report to be already set.
 	 *
 	 * The method expects the following parameters:
 	 *
@@ -652,21 +621,12 @@ class Validator
 			)                                                           // ==>
 		}
 
-		const report =
-			new ValidationReport(
-				'kEXPENTING_DATA_DIMENSION',
-				theDescriptor._key,
-				theSection,
-				this.language
-			)
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kEXPECTING_DATA_DIMENSION',
+			theDescriptor._key,
+			theSection,
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateDimension()
 
@@ -766,21 +726,12 @@ class Validator
 				///
 				// Unsupported data type.
 				///
-				report =
-					new ValidationReport(
-						'kUNSUPPORTED',
-						theDescriptor._key,
-						theSection,
-						this.language
-					)
-
-				if(theReportIndex !== null) {
-					this.report[theReportIndex] = report
-				} else {
-					this.report = report
-				}
-
-				return false                                            // ==>
+				return this.setStatusReport(
+					'kUNSUPPORTED',
+					theDescriptor._key,
+					theSection,
+					theReportIndex
+				)                                                       // ==>
 
 			} // Has data type.
 
@@ -788,21 +739,12 @@ class Validator
 			// Missing data type.
 			///
 			else if(this.expectType) {
-				report =
-					new ValidationReport(
-						'kMISSING_SCALAR_DATA_TYPE',
-						theDescriptor._key,
-						theContainer,
-						this.language
-					)
-
-				if(theReportIndex !== null) {
-					this.report[theReportIndex] = report
-				} else {
-					this.report = report
-				}
-
-				return false                                            // ==>
+				return this.setStatusReport(
+					'kMISSING_SCALAR_DATA_TYPE',
+					theDescriptor._key,
+					theContainer,
+					theReportIndex
+				)                                                       // ==>
 
 			} // Missing data type.
 
@@ -810,21 +752,12 @@ class Validator
 
 		} // Is a scalar.
 
-		report =
-			new ValidationReport(
-				'kNOT_A_SCALAR',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
-				this.language
-			)
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kNOT_A_SCALAR',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateScalar()
 
@@ -942,23 +875,12 @@ class Validator
 			return true                                                 // ==>
 		}
 
-		const report =
-			new ValidationReport(
-				'kNOT_A_BOOLEAN',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
-				this.language
-			)
-
-		report.section = theSection
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kNOT_A_BOOLEAN',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateBoolean()
 
@@ -995,23 +917,12 @@ class Validator
 			)                                                           // ==>
 		}
 
-		const report =
-			new ValidationReport(
-				'kNOT_AN_INTEGER',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
-				this.language
-			)
-
-		report.section = theSection
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kNOT_AN_INTEGER',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateInteger()
 
@@ -1048,23 +959,12 @@ class Validator
 			)                                                           // ==>
 		}
 
-		const report =
-			new ValidationReport(
-				'kNOT_A_NUMBER',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
-				this.language
-			)
-
-		report.section = theSection
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kNOT_A_NUMBER',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateNumber()
 
@@ -1119,33 +1019,22 @@ class Validator
 				///
 				theContainer[theDescriptor._key] = timestamp.valueOf()
 
-				// TODO: Indicate modified value.
+				// TODO: Log modified value.
 
-				return this.doValidateTimeStamp(
-					theContainer
+				return this.ValidateNumericRange(
+					theContainer, theDescriptor, theSection, theReportIndex
 				)                                                       // ==>
 
 			} // Converted to timestamp.
 
 		} // Value is string.
 
-		const report =
-			new ValidationReport(
-				'kVALUE_NOT_A_TIMESTAMP',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
-				this.language
-			)
-
-		report.section = theSection
-
-		if(theReportIndex !== null) {
-			this.report[theReportIndex] = report
-		} else {
-			this.report = report
-		}
-
-		return false                                                    // ==>
+		return this.setStatusReport(
+			'kVALUE_NOT_A_TIMESTAMP',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
 
 	} // doValidateTimeStamp()
 
@@ -1194,32 +1083,48 @@ class Validator
 			{
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinInclusive)) {
 					if(value < range[module.context.configuration.rangeNumberMinInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
-						)                                               // ==>
+						return this.setStatusReport(
+								'kVALUE_OUT_OF_RANGE',
+								theDescriptor._key,
+								theContainer[theDescriptor._key],
+								theReportIndex,
+								{ "section": theSection }
+							)                                           // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeNumberMinExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeNumberMaxInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeNumberMaxExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
@@ -1228,23 +1133,13 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			const report =
-				new ValidationReport(
-					'kRANGE_NOT_AN_OBJECT',
-					theDescriptor._key,
-					range,
-					this.language
-				)
-
-			report.section = theSection
-
-			if(theReportIndex !== null) {
-				this.report[theReportIndex] = report
-			} else {
-				this.report = report
-			}
-
-			return false                                                // ==>
+			return this.setStatusReport(
+				'kRANGE_NOT_AN_OBJECT',
+				theDescriptor._key,
+				range,
+				theReportIndex,
+				{ "section": theSection }
+			)                                                           // ==>
 
 		} // Has range.
 
@@ -1291,32 +1186,48 @@ class Validator
 			{
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinInclusive)) {
 					if(value < range[module.context.configuration.rangeStringMinInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeStringMinExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeStringMaxInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeStringMaxExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
@@ -1325,23 +1236,13 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			const report =
-				new ValidationReport(
-					'kRANGE_NOT_AN_OBJECT',
-					theDescriptor._key,
-					range,
-					this.language
-				)
-
-			report.section = theSection
-
-			if(theReportIndex !== null) {
-				this.report[theReportIndex] = report
-			} else {
-				this.report = report
-			}
-
-			return false                                                // ==>
+			return this.setStatusReport(
+				'kRANGE_NOT_AN_OBJECT',
+				theDescriptor._key,
+				range,
+				theReportIndex,
+				{ "section": theSection }
+			)                                                           // ==>
 
 		} // Has range.
 
@@ -1388,32 +1289,48 @@ class Validator
 			{
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinInclusive)) {
 					if(value < range[module.context.configuration.rangeDateMinInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeDateMinExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeDateMaxInclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeDateMaxExclusive]) {
-						return setRangeError(
-							value, theDescriptor, theSection, theReportIndex
+						return this.setStatusReport(
+							'kVALUE_OUT_OF_RANGE',
+							theDescriptor._key,
+							theContainer[theDescriptor._key],
+							theReportIndex,
+							{ "section": theSection }
 						)                                               // ==>
 					}
 				}
@@ -1422,23 +1339,13 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			const report =
-				new ValidationReport(
-					'kRANGE_NOT_AN_OBJECT',
-					theDescriptor._key,
-					range,
-					this.language
-				)
-
-			report.section = theSection
-
-			if(theReportIndex !== null) {
-				this.report[theReportIndex] = report
-			} else {
-				this.report = report
-			}
-
-			return false                                                // ==>
+			return this.setStatusReport(
+				'kRANGE_NOT_AN_OBJECT',
+				theDescriptor._key,
+				range,
+				theReportIndex,
+				{ "section": theSection }
+			)                                                           // ==>
 
 		} // Has range.
 
@@ -1446,44 +1353,64 @@ class Validator
 
 	} // ValidateDateRange()
 
+
 	/**
-	 * setRangeError
-	 *
-	 * This method will instantiate a range error and set the appropriate
-	 * status report fields, then return `false`.
-	 *
-	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
-	 * @param theSection {Object}: Data or array term section.
-	 * @param theReportIndex {Number}: Container key for value, defaults to null.
-	 *
-	 * @return {Boolean}: `false`.
+	 * UTILITY METHODS
 	 */
-	setRangeError(
-		theContainer,
-		theDescriptor,
-		theSection,
-		theReportIndex)
+
+
+	/**
+	 * setStatusReport
+	 *
+	 * This method can be used to set a status report.
+	 *
+	 * @param theStatus {String}: The status code, defaults to idle.
+	 * @param theDescriptor {String}: The descriptor global identifier, defaults
+	 *                                to empty string.
+	 * @param theValue {String|Number|Object|Array}: Value, defaults to null.
+	 * @param theReportIndex {Number}: Report index, defaults to null.
+	 * @param theCustomFields {Object}: Key/value dictionary to add to the
+	 *                                  report, defaults to empty object.
+	 *
+	 * @return {Boolean}: `true`, if the status code is `0`, `false` if not.
+	 */
+	setStatusReport(
+		theStatus = 'kOK',
+		theDescriptor = '',
+		theValue = null,
+		theReportIndex = null,
+		theCustomFields = {})
 	{
+		///
+		// Instantiate report with current language.
+		///
 		const report =
 			new ValidationReport(
-				'kVALUE_OUT_OF_RANGE',
-				theDescriptor._key,
-				theContainer[theDescriptor._key],
+				theStatus,
+				theDescriptor,
+				theValue,
 				this.language
 			)
 
-		report.section = theSection
+		///
+		// Add custom report fields.
+		///
+		Object.entries(theCustomFields).forEach(([key, value]) => {
+			report[key] = value
+		})
 
+		///
+		// Store report.
+		///
 		if(theReportIndex !== null) {
 			this.report[theReportIndex] = report
 		} else {
 			this.report = report
 		}
 
-		return false                                                    // ==>
+		return (report.status.code === 0)                               // ==>
 
-	} // setRangeError()
+	} // setStatusReport()
 
 
 	/**

@@ -148,7 +148,7 @@ class ValidationStatus
 				"iso_639_3_eng": "The range variable is expected to be an object."
 			}
 		},
-		"kEXPENTING_DATA_DIMENSION": {
+		"kEXPECTING_DATA_DIMENSION": {
 			"statusCode": -1,
 			"statusMessage": {
 				"iso_639_3_eng": `The provided descriptor has an invalid data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\`, but none provided.`
