@@ -8,6 +8,7 @@ const _ = require('lodash')
 ///
 // Modules.
 ///
+const crypto = require('@arangodb/crypto')
 const TermsCache = require('./TermsCache')
 const ValidationReport = require('./ValidationReport')
 
@@ -693,10 +694,14 @@ class Validator
 						)                                               // ==>
 
 					case module.context.configuration.typeString:
-						return true
+						return this.doValidateString(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 
 					case module.context.configuration.typeKey:
-						return true
+						return this.doValidateKey(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 
 					case module.context.configuration.typeHandle:
 						return true
@@ -907,7 +912,7 @@ class Validator
 		///
 		if(Validator.IsInteger(theContainer[theDescriptor._key]))
 		{
-			return this.ValidateNumericRange(
+			return this.checkNumericRange(
 				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
@@ -949,7 +954,7 @@ class Validator
 		///
 		if(Validator.IsNumber(theContainer[theDescriptor._key]))
 		{
-			return this.ValidateNumericRange(
+			return this.checkNumericRange(
 				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
@@ -993,7 +998,7 @@ class Validator
 		// Check if UNIX timestamp.
 		///
 		if(Validator.IsNumber(theContainer[theDescriptor._key])) {
-			return this.ValidateNumericRange(
+			return this.checkNumericRange(
 				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
@@ -1010,13 +1015,24 @@ class Validator
 			if(!isNaN(timestamp.valueOf()))
 			{
 				///
+				// Log resolved value.
+				///
+				this.logResolvedValues(
+					theDescriptor._key,
+					theContainer[theDescriptor._key],
+					timestamp.valueOf(),
+					theReportIndex
+				)
+
+				///
 				// Update original value.
 				///
 				theContainer[theDescriptor._key] = timestamp.valueOf()
 
-				// TODO: Log modified value.
-
-				return this.ValidateNumericRange(
+				///
+				// Check timestamp valid range.
+				///
+				return this.checkNumericRange(
 					theContainer, theDescriptor, theSection, theReportIndex
 				)                                                       // ==>
 
@@ -1033,6 +1049,199 @@ class Validator
 
 	} // doValidateTimeStamp()
 
+	/**
+	 * doValidateString
+	 *
+	 * This method will validate the provided string value.
+	 *
+	 * The method will first assert if the value is a string.
+	 * The method will then assert the value is within valid range.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateString(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Handle string.
+		///
+		if(Validator.IsString(theContainer[theDescriptor._key]))
+		{
+			///
+			// Check regular expression.
+			///
+			if(this.checkRegexp(theContainer, theDescriptor, theSection, theReportIndex))
+			{
+				///
+				// Check valid range.
+				///
+				return this.checkStringRange(
+					theContainer, theDescriptor, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			return false                                                // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_A_STRING',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
+
+	} // doValidateString()
+
+	/**
+	 * doValidateKey
+	 *
+	 * This method will validate the provided key value.
+	 *
+	 * The method will first assert if the value is a string.
+	 * The method will then that the string corresponds to a term.
+	 * Finally, the method will check the eventual data kind.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateKey(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Handle string.
+		///
+		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+			return false                                                // ==>
+		}
+
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const value = theContainer[key]
+
+		///
+		// Prevent using default namespace.
+		///
+		if(value.length === 0) {
+			return this.setStatusReport(
+				'kEMPTY_KEY', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		///
+		// Assert key matches a term.
+		///
+		const term = this.cache.getTerm(value)
+		if(term !== false)
+		{
+			///
+			// Check data kind.
+			///
+			if(theSection.hasOwnProperty(module.context.configuration.dataKind))
+			{
+				///
+				// Assert kind is an array.
+				///
+				const kinds = theSection[module.context.configuration.dataKind]
+				if(Validator.IsArray(kinds))
+				{
+					///
+					// Iterate and parse data kind elements.
+					///
+					for(const kind of kinds) {
+						switch(kind) {
+							case module.context.configuration.anyEnum:
+								if(!term.hasOwnProperty(module.context.configuration.sectionPath)) {
+									return this.setStatusReport(
+										'kNOT_AN_ENUM',
+										key,
+										value,
+										theReportIndex,
+										{ "section": theSection}
+									)                                   // ==>
+								}
+								break
+
+							case module.context.configuration.anyDescriptor:
+								if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
+									return this.setStatusReport(
+										'kNOT_A_DESCRIPTOR',
+										key,
+										value,
+										theReportIndex,
+										{ "section": theSection}
+									)                                   // ==>
+								}
+								break
+
+							case module.context.configuration.anyObject:
+								if(!term.hasOwnProperty(module.context.configuration.sectionRule)) {
+									return this.setStatusReport(
+										'kNOT_A_STRUCTURE_DEFINITION',
+										key,
+										value,
+										theReportIndex,
+										{ "section": theSection}
+									)                                   // ==>
+								}
+								break
+
+							default:
+								return this.setStatusReport(
+									'kNINVALID_DATA_KIND_OPTION',
+									module.context.configuration.dataKind,
+									kind,
+									theReportIndex,
+									{ "section": theSection}
+								)                                       // ==>
+
+						} // Parsed allowed values.
+					}
+
+					return true                                         // ==>
+
+				} // Data kind is an array.
+
+				return this.setStatusReport(
+					'kNOT_ARRAY_DATA_KIND',
+					module.context.configuration.dataKind,
+					kinds,
+					theReportIndex,
+					{ "section": theSection}
+				)                                                       // ==>
+
+			} // Has data kind.
+
+			return true                                                 // ==>
+
+		} // Key matches a term.
+
+		return this.setStatusReport(
+			'kUNKNOWN_TERM', key, value, theReportIndex
+		)                                                               // ==>
+
+	} // doValidateKey()
+
 
 	/**
 	 * VALIDATION UTILITY METHODS
@@ -1040,7 +1249,7 @@ class Validator
 
 
 	/**
-	 * ValidateNumericRange
+	 * checkNumericRange
 	 *
 	 * This method will assert if the provided numeric value is within range.
 	 *
@@ -1057,7 +1266,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateNumericRange(
+	checkNumericRange(
 		theContainer,
 		theDescriptor,
 		theSection,
@@ -1140,10 +1349,10 @@ class Validator
 
 		return true                                                     // ==>
 
-	} // ValidateNumericRange()
+	} // checkNumericRange()
 
 	/**
-	 * ValidateStringRange
+	 * checkStringRange
 	 *
 	 * This method will assert if the provided string value is within range.
 	 *
@@ -1160,7 +1369,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateStringRange(
+	checkStringRange(
 		theContainer,
 		theDescriptor,
 		theSection,
@@ -1243,10 +1452,10 @@ class Validator
 
 		return true                                                     // ==>
 
-	} // ValidateStringRange()
+	} // checkStringRange()
 
 	/**
-	 * ValidateDateRange
+	 * checkDateRange
 	 *
 	 * This method will assert if the provided date value is within range.
 	 *
@@ -1263,7 +1472,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateDateRange(
+	checkDateRange(
 		theContainer,
 		theDescriptor,
 		theSection,
@@ -1346,7 +1555,61 @@ class Validator
 
 		return true                                                     // ==>
 
-	} // ValidateDateRange()
+	} // checkDateRange()
+
+	/**
+	 * checkRegexp
+	 *
+	 * This method will assert if the provided string value matches the provided
+	 * regular expression.
+	 *
+	 * The method assumes that `theSection` contains the regular expression
+	 * in the correct term. The method also assumes the value is a string.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	checkRegexp(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Check regular expression.
+		///
+		if(theSection.hasOwnProperty(module.context.configuration.regularExpression))
+		{
+			//
+			// Instantiate regular expression.
+			//
+			const regexpstr = theSection[module.context.configuration.regularExpression]
+			const regexp = new RegExp(regexpstr)
+
+			//
+			// Match value.
+			//
+			if(!theContainer[theDescriptor._key].match(regexp)) {
+				return this.setStatusReport(
+					'kNO_MATCH_REGEXP',
+					theDescriptor._key,
+					theContainer[theDescriptor._key],
+					theReportIndex,
+					{ "regexp": regexpstr }
+				)                                                       // ==>
+			}
+
+		} // Has regular expression.
+
+		return true                                                     // ==>
+
+	} // checkRegexp()
 
 
 	/**
@@ -1406,6 +1669,68 @@ class Validator
 		return (report.status.code === 0)                               // ==>
 
 	} // setStatusReport()
+
+	/**
+	 * logResolvedValues
+	 * This method can be used to log resolved values to the current status
+	 * report. The method expects the status report to have been initialised
+	 * and the current status should be idle.
+	 *
+	 * If later there is an error, the status will be replaced and the logged
+	 * changes will be lost, but since the value is not correct, this does not
+	 * matte.
+	 *
+	 * Since we are only interested in the descriptor and its value, making the
+	 * same change to several instances of the same descriptor/value pair should
+	 * result in a single log entry. The `changes` member of the status report
+	 * is a key/value dictionary in which the key is the hash of the key/value
+	 * combination between descriptor and value, and the value is the log
+	 * entry.
+	 *
+	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theOldValue  {String|Number|Object|Array}:
+	 * @param theNewValue {String|Number|Object|Array}:
+	 * @param theReportIndex {Number}: Report index, defaults to null.
+	 */
+	logResolvedValues(theDescriptor,
+	                  theOldValue,
+	                  theNewValue,
+	                  theReportIndex = null)
+	{
+		///
+		// Init local storage.
+		///
+		let hash
+		const record = {}
+
+		///
+		// Create log key.
+		///
+		if(Validator.IsObject(theOldValue)) {
+			hash = crypto.md5(theDescriptor + "\t" + JSON.stringify(theOldValue))
+		} else {
+			hash = crypto.md5(theDescriptor + "\t" + theOldValue.toString())
+		}
+
+		///
+		// Create log.
+		///
+		record[hash] = {
+			"field": theDescriptor,
+			"original": theOldValue,
+			"resolved": theNewValue
+		}
+
+		///
+		// Set in report.
+		///
+		if(theReportIndex !== null) {
+			this.report[theReportIndex].changes = record
+		} else {
+			this.report =  record
+		}
+
+	} // logResolvedValues()
 
 
 	/**

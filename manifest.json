@@ -270,6 +270,42 @@
             "type": "string",
             "required": true,
             "default": "_max-range-exclusive_string"
+        },
+        "regularExpression": {
+            "description": "Regular expression descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_regexp"
+        },
+        "dataKind": {
+            "description": "Data kind descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_kind"
+        },
+        "anyTerm": {
+            "description": "Any term wildcard key",
+            "type": "string",
+            "required": true,
+            "default": "_any-term"
+        },
+        "anyEnum": {
+            "description": "Any enumeration element term wildcard key",
+            "type": "string",
+            "required": true,
+            "default": "_any-enum"
+        },
+        "anyDescriptor": {
+            "description": "Any descriptor term wildcard key",
+            "type": "string",
+            "required": true,
+            "default": "_any-descriptor"
+        },
+        "anyObject": {
+            "description": "Any object definition term wildcard key",
+            "type": "string",
+            "required": true,
+            "default": "_any-object"
         }
     },
     "tests": "test/**/*.js"

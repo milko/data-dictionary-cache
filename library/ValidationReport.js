@@ -20,11 +20,14 @@
  *                 descriptor.
  * - `value`: The incorrect value.
  * - `changes`: During the validation process, if required, there can be cases
- *              in which an enyumeration code may be resolved in case it does
+ *              in which an enumeration code may be resolved in case it does
  *              not match exactly the full code: this field is an object that
  *              logs such changes: `field` contains the descriptor global
  *              identifier, `original` contains the original code and `resolved`
- *              contains the resolved code.
+ *              contains the resolved code. Changes will usually be set when
+ *              the status is idle, if there is an error the status will be
+ *              replaced, but this is not an issue, since these changes are
+ *              meant for correct values.
  * - Other members providing information on the eventual errors.
  *
  * A report whose `status.code` is `0` means that there was no error; the
@@ -142,16 +145,28 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kNINVALID_DATA_KIND_OPTION": {
+			"statusCode": -4,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid data section: string key data type features an invalid option."
+			}
+		},
+		"kNOT_ARRAY_DATA_KIND": {
+			"statusCode": -3,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid data section: the data kind is not an array."
+			}
+		},
 		"kRANGE_NOT_AN_OBJECT": {
 			"statusCode": -2,
 			"statusMessage": {
-				"iso_639_3_eng": "The range variable is expected to be an object."
+				"iso_639_3_eng": "Invalid data section: the range variable is expected to be an object."
 			}
 		},
 		"kEXPECTING_DATA_DIMENSION": {
 			"statusCode": -1,
 			"statusMessage": {
-				"iso_639_3_eng": `The provided descriptor has an invalid data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\`, but none provided.`
+				"iso_639_3_eng": `Invalid data section: expecting. \`${module.context.configuration.sectionScalar}\`, \`${module.context.configuration.sectionArray}\`, \`${module.context.configuration.sectionSet}\` or \`${module.context.configuration.sectionDict}\`, but none provided.`
 			}
 		},
 		"kOK": {
@@ -167,13 +182,13 @@ class ValidationStatus
 		"kNOT_AN_OBJECT": {
 			"statusCode": 1,
 			"statusMessage": {
-				"iso_639_3_eng": "Expecting an object value."
+				"iso_639_3_eng": "Expecting an object."
 			}
 		},
 		"kNOT_AN_ARRAY": {
 			"statusCode": 2,
 			"statusMessage": {
-				"iso_639_3_eng": "Expecting an array value."
+				"iso_639_3_eng": "Expecting an array."
 			}
 		},
 		"kEMPTY_OBJECT": {
@@ -252,6 +267,36 @@ class ValidationStatus
 			"statusCode": 15,
 			"statusMessage": {
 				"iso_639_3_eng": "The value does not correspond to a supported option."
+			}
+		},
+		"kNOT_A_STRING": {
+			"statusCode": 16,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is not a string."
+			}
+		},
+		"kNO_MATCH_REGEXP": {
+			"statusCode": 17,
+			"statusMessage": {
+				"iso_639_3_eng": "String does not match regular expression."
+			}
+		},
+		"kEMPTY_KEY": {
+			"statusCode": 18,
+			"statusMessage": {
+				"iso_639_3_eng": "The provided key cannot reference the default namespace."
+			}
+		},
+		"kNOT_AN_ENUM": {
+			"statusCode": 19,
+			"statusMessage": {
+				"iso_639_3_eng": "The provided key is not an enumeration element reference."
+			}
+		},
+		"kNOT_A_STRUCTURE_DEFINITION": {
+			"statusCode": 20,
+			"statusMessage": {
+				"iso_639_3_eng": "The provided key is not a structure definition reference."
 			}
 		}
 	}
