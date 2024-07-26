@@ -829,7 +829,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateSet(
+	doValidateDict(
 		theContainer,
 		theDescriptor,
 		theSection,
@@ -838,7 +838,7 @@ class Validator
 
 		return true                                                    // ==>
 
-	} // doValidateSet()
+	} // doValidateDict()
 
 
 	/**
