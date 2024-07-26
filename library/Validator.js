@@ -658,11 +658,6 @@ class Validator
 		theReportIndex)
 	{
 		///
-		// Init local storage.
-		///
-		let report = {}
-
-		///
 		// Assert scalar.
 		///
 		if(!Validator.IsArray(theContainer[theDescriptor._key]))
@@ -1084,11 +1079,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinInclusive)) {
 					if(value < range[module.context.configuration.rangeNumberMinInclusive]) {
 						return this.setStatusReport(
-								'kVALUE_OUT_OF_RANGE',
+								'kVALUE_LOW_RANGE',
 								theDescriptor._key,
 								theContainer[theDescriptor._key],
 								theReportIndex,
-								{ "section": theSection }
+								{ "section": range }
 							)                                           // ==>
 					}
 				}
@@ -1096,11 +1091,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeNumberMinExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_LOW_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1108,11 +1103,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeNumberMaxInclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1120,11 +1115,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeNumberMaxExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1187,11 +1182,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinInclusive)) {
 					if(value < range[module.context.configuration.rangeStringMinInclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_LOW_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1199,11 +1194,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeStringMinExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_LOW_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1211,11 +1206,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeStringMaxInclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1223,11 +1218,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeStringMaxExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1290,11 +1285,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinInclusive)) {
 					if(value < range[module.context.configuration.rangeDateMinInclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_LOW_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1302,11 +1297,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinExclusive)) {
 					if(value <= range[module.context.configuration.rangeDateMinExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_LOW_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1314,11 +1309,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxInclusive)) {
 					if(value > range[module.context.configuration.rangeDateMaxInclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}
@@ -1326,11 +1321,11 @@ class Validator
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxExclusive)) {
 					if(value >= range[module.context.configuration.rangeDateMaxExclusive]) {
 						return this.setStatusReport(
-							'kVALUE_OUT_OF_RANGE',
+							'kVALUE_HIGH_RANGE',
 							theDescriptor._key,
 							theContainer[theDescriptor._key],
 							theReportIndex,
-							{ "section": theSection }
+							{ "section": range }
 						)                                               // ==>
 					}
 				}

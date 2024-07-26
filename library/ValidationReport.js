@@ -230,14 +230,26 @@ class ValidationStatus
 				"iso_639_3_eng": "Value out of range."
 			}
 		},
-		"kVALUE_NOT_A_TIMESTAMP": {
+		"kVALUE_LOW_RANGE": {
 			"statusCode": 12,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is less than valid range."
+			}
+		},
+		"kVALUE_HIGH_RANGE": {
+			"statusCode": 13,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is higher than valid range."
+			}
+		},
+		"kVALUE_NOT_A_TIMESTAMP": {
+			"statusCode": 14,
 			"statusMessage": {
 				"iso_639_3_eng": "Value cannot be interpreted as a timestamp."
 			}
 		},
 		"kUNSUPPORTED": {
-			"statusCode": 13,
+			"statusCode": 15,
 			"statusMessage": {
 				"iso_639_3_eng": "The value does not correspond to a supported option."
 			}
