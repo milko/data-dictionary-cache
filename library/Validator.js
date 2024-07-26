@@ -56,13 +56,24 @@ class Validator
 	 * - `doCache`: This boolean flag can be used to force caching of all
 	 *              resolved terms. If false, no terms will be cached. This
 	 *              value is passed to all TermsCache methods.
-	 * - `doMissing`: This boolean flag is related to the `doCache` flag and is
-	 *                only used if the cache flag is set. If this flag is set,
-	 *                terms that were not resolved will also be set with a
-	 *                `false` value; if this flag is not set, only resolved
-	 *                terms will be cached. This flag can be useful when objects
-	 *                contain a consistent set of properties that should be
-	 *                checked.
+	 * - `doCacheMissing`: This boolean flag is related to the `doCache` flag and
+	 *                     is only used if the cache flag is set. If this flag is
+	 *                     set, terms that were not resolved will also be set
+	 *                     with a `false` value; if this flag is not set, only
+	 *                     resolved terms will be cached. This flag can be
+	 *                     useful when objects contain a consistent set of
+	 *                     properties that should be checked.
+	 * - `doOnlyTerms`: This boolean flag can be used to expect all object
+	 *                  properties to be descriptors. If the flag is set, when
+	 *                  traversing objects we expect all properties to be
+	 *                  descriptors. If the flag is off, object properties that
+	 *                  do not match a term will be ignored, this is the
+	 *                  default behaviour.
+	 * - `doDataType`: This boolean flag can be used to have all values require
+	 *                 their data type. If the flag is set, all data definitions
+	 *                 must have the data type. If the flag is off, omitting the
+	 *                 data type means that the value can be of any type, which
+	 *                 is the default option.
 	 * - `doResolve`: There are cases in which values are not fully compliant:
 	 *                you could have provided the local identifier of an
 	 *                enumeration or a string to be converted into a timestamp,
@@ -95,6 +106,8 @@ class Validator
 	 * - `resolved`: Will receive eventual resolved values log.
 	 * - `useCache`: Will receive the `doCache` flag.
 	 * - `cacheMissing`: Will receive the `doMissing` flag.
+	 * - `expectTerms`: Will receive thw `doOnlyTerms` flag.
+	 * - `expectType`: Will receive the `doDataType` flag.
 	 * - `language`: Will receive the language provided in validate() for report
 	 *               messages.
 	 *
@@ -125,8 +138,11 @@ class Validator
 	 *                         of the provided list of values, defaults to
 	 *                         false.
 	 * @param doCache {Boolean}: Flag for caching terms, defaults to true.
-	 * @param doMissing {Boolean}: Flag for caching non resolved terms, defaults
-	 *                             to false.
+	 * @param doCacheMissing {Boolean}: Flag for caching non resolved terms,
+	 *                                  defaults to false.
+	 * @param doOnlyTerms {Boolean}: Flag to expect all object properties to be
+	 *                               term descriptors.
+	 * @param doDataType {Boolean}: Flag to require data type for all values.
 	 * @param doResolve {Boolean}: If true, resolve timestamps and eventual
 	 *                             unmatched enumerations, defaults to false.
 	 * @param resolveCode {String}: If doResolve is set, provide the term code
@@ -139,7 +155,9 @@ class Validator
 		theTerm = '',
 		doZip = false,
 		doCache = true,
-		doMissing = false,
+		doCacheMissing = false,
+		doOnlyTerms = false,
+		doDataType = false,
 		doResolve = false,
 		resolveCode = module.context.configuration.localIdentifier
 	){
@@ -157,11 +175,14 @@ class Validator
 		///
 		// Init global flags.
 		///
-		this.zip = doZip
-		this.resolve = doResolve
+		this.zip = Boolean(doZip)
+		this.resolve =  Boolean(doResolve)
+		this.useCache =  Boolean(doCache)
+		this.cacheMissing =  Boolean(doCacheMissing)
+		this.expectTerms =  Boolean(doOnlyTerms)
+		this.expectTerms =  Boolean(doOnlyTerms)
+		this.expectType = Boolean(doDataType)
 		this.resolver = resolveCode
-		this.useCache = doCache
-		this.cacheMissing = doMissing
 
 		///
 		// Handle descriptor.
@@ -230,7 +251,7 @@ class Validator
 				}
 
 				if(!Validator.IsObject(theValue)) {
-					throw newException(
+					throw new Error(
 						"You did not provide a descriptor: we expect either an array of objects or an object."
 					)                                                   // ==>
 				}
@@ -353,7 +374,10 @@ class Validator
 			///
 			this.report[index] =
 				new ValidationReport(
-					'kOK', this.term._key, this.language
+					'kOK',
+					this.term._key,
+					null,
+					this.language
 				)
 
 			///
@@ -407,10 +431,12 @@ class Validator
 			}
 			else
 			{
-				this.report.value = value
 				this.report[index] =
 					new ValidationReport(
-						'kNOT_AN_OBJECT', '', this.language
+						'kNOT_AN_OBJECT',
+						'',
+						value,
+						this.language
 					)
 
 				return false                                            // ==>
@@ -451,7 +477,10 @@ class Validator
 		///
 		const report =
 			new ValidationReport(
-				'kOK', '', this.language
+				'kOK',
+				'',
+				null,
+				this.language
 			)
 		if(theReportIndex === null) {
 			this.report = report
@@ -473,9 +502,28 @@ class Validator
 				)
 
 			///
-			// Skip unknown symbols.
+			// Term not found.
 			///
 			if(term === false) {
+				if(this.expectTerms) {
+					const report =
+						new ValidationReport(
+							'kUNKNOWN_TERM',
+							property,
+							theContainer[property],
+							this.language
+						)
+
+					if(theReportIndex !== null) {
+						this.report[theReportIndex] = report
+					} else {
+						this.report = report
+					}
+
+					status = false
+					return true
+				}
+
 				return false
 			}
 
@@ -485,7 +533,10 @@ class Validator
 			if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
 				const report =
 					new ValidationReport(
-						'kNOT_A_DESCRIPTOR', term._key, this.language
+						'kNOT_A_DESCRIPTOR',
+						term._key,
+						theContainer[property],
+						this.language
 					)
 
 				if(theReportIndex !== null) {
@@ -501,7 +552,12 @@ class Validator
 			///
 			// Validate property/value pair.
 			///
-			if(!this.doValidateDimension(theContainer, term, this.term[module.context.configuration.sectionData], theReportIndex)) {
+			if(!this.doValidateDimension(
+				theContainer,
+				term,
+				term[module.context.configuration.sectionData],
+				theReportIndex
+			)) {
 				status = false
 				return true
 			}
@@ -598,10 +654,11 @@ class Validator
 
 		const report =
 			new ValidationReport(
-				'kEXPENTING_DATA_DIMENSION', theDescriptor._key, this.language
+				'kEXPENTING_DATA_DIMENSION',
+				theDescriptor._key,
+				theSection,
+				this.language
 			)
-
-		report.value = theSection
 
 		if(theReportIndex !== null) {
 			this.report[theReportIndex] = report
@@ -634,7 +691,11 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateScalar(theContainer, theDescriptor, theSection, theReportIndex)
+	doValidateScalar(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Init local storage.
@@ -707,10 +768,11 @@ class Validator
 				///
 				report =
 					new ValidationReport(
-						'kUNSUPPORTED', theDescriptor._key, this.language
+						'kUNSUPPORTED',
+						theDescriptor._key,
+						theSection,
+						this.language
 					)
-
-				report.value = theSection
 
 				if(theReportIndex !== null) {
 					this.report[theReportIndex] = report
@@ -722,16 +784,39 @@ class Validator
 
 			} // Has data type.
 
+			///
+			// Missing data type.
+			///
+			else if(this.expectType) {
+				report =
+					new ValidationReport(
+						'kMISSING_SCALAR_DATA_TYPE',
+						theDescriptor._key,
+						theContainer,
+						this.language
+					)
+
+				if(theReportIndex !== null) {
+					this.report[theReportIndex] = report
+				} else {
+					this.report = report
+				}
+
+				return false                                            // ==>
+
+			} // Missing data type.
+
 			return true                                                 // ==>
 
 		} // Is a scalar.
 
 		report =
 			new ValidationReport(
-				'kNOT_A_SCALAR', theDescriptor._key, this.language
+				'kNOT_A_SCALAR',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
 			)
-
-		this.report.value = theContainer
 
 		if(theReportIndex !== null) {
 			this.report[theReportIndex] = report
@@ -751,13 +836,18 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {Array}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateArray(theValue, theDescriptor, theSection, theParent)
+	doValidateArray(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 
 		return true                                                    // ==>
@@ -773,13 +863,18 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {Array}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateSet(theValue, theDescriptor, theSection, theParent)
+	doValidateSet(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 
 		return true                                                    // ==>
@@ -794,13 +889,18 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	validateSet(theValue, theDescriptor, theSection, theParent)
+	validateSet(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 
 		return true                                                    // ==>
@@ -822,27 +922,41 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateBoolean(theValue, theDescriptor, theSection, theParent)
+	doValidateBoolean(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Check if boolean.
 		///
-		if(Validator.IsBoolean(theValue)) {
+		if(Validator.IsBoolean(theContainer[theDescriptor._key])) {
 			return true                                                 // ==>
 		}
 
-		this.report = new ValidationReport('kNOT_A_BOOLEAN')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		const report =
+			new ValidationReport(
+				'kNOT_A_BOOLEAN',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
+			)
+
+		report.section = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
@@ -858,32 +972,44 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateInteger(theValue, theDescriptor, theSection, theParent)
+	doValidateInteger(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
-		// Check if integer.
+		// Handle integer.
 		///
-		if(Validator.IsInteger(theValue)) {
-			///
-			// Check if in range.
-			///
+		if(Validator.IsInteger(theContainer[theDescriptor._key]))
+		{
 			return this.ValidateNumericRange(
-				theValue, theDescriptor, theSection, theParent
+				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
-		this.report = new ValidationReport('kNOT_AN_INTEGER')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		const report =
+			new ValidationReport(
+				'kNOT_AN_INTEGER',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
+			)
+
+		report.section = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
@@ -899,32 +1025,44 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateNumber(theValue, theDescriptor, theSection, theParent)
+	doValidateNumber(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
-		// Check if integer.
+		// Handle number.
 		///
-		if(Validator.IsNumber(theValue)) {
-			///
-			// Check if in range.
-			///
+		if(Validator.IsNumber(theContainer[theDescriptor._key]))
+		{
 			return this.ValidateNumericRange(
-				theValue, theDescriptor, theSection, theParent
+				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
-		this.report = new ValidationReport('kNOT_A_NUMBER')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		const report =
+			new ValidationReport(
+				'kNOT_A_NUMBER',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
+			)
+
+		report.section = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
@@ -943,44 +1081,69 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateTimeStamp(theValue, theDescriptor, theSection, theParent)
+	doValidateTimeStamp(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Check if UNIX timestamp.
 		///
-		if(Validator.IsNumber(theValue)) {
+		if(Validator.IsNumber(theContainer[theDescriptor._key])) {
 			return this.ValidateNumericRange(
-				theValue, theDescriptor, theSection, theParent
+				theContainer, theDescriptor, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
 		///
 		// Check if string date.
 		///
-		if(Validator.IsString(theValue)) {
-			const timestamp = new Date(theValue)
-			if(!isNaN(timestamp.valueOf())) {
-				theValue = timestamp.valueOf()
-				this.report.value = theValue
+		if(Validator.IsString(theContainer[theDescriptor._key]))
+		{
+			///
+			// Convert to timestamp.
+			///
+			const timestamp = new Date(theContainer[theDescriptor._key])
+			if(!isNaN(timestamp.valueOf()))
+			{
+				///
+				// Update original value.
+				///
+				theContainer[theDescriptor._key] = timestamp.valueOf()
 
-				return this.ValidateNumericRange(
-					theValue, theDescriptor, theSection, theParent
+				// TODO: Indicate modified value.
+
+				return this.doValidateTimeStamp(
+					theContainer
 				)                                                       // ==>
-			}
-		}
 
-		this.report = new ValidationReport('kVALUE_NOT_A_TIMESTAMP')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+			} // Converted to timestamp.
+
+		} // Value is string.
+
+		const report =
+			new ValidationReport(
+				'kVALUE_NOT_A_TIMESTAMP',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
+			)
+
+		report.section = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
@@ -1003,53 +1166,60 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateNumericRange(theValue, theDescriptor, theSection, theParent)
+	ValidateNumericRange(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Check range.
 		///
-		if(theSection.hasOwnProperty(module.context.configuration.rangeNumber)) {
+		if(theSection.hasOwnProperty(module.context.configuration.rangeNumber))
+		{
+			const value = theContainer[theDescriptor._key]
 			const range = theSection[module.context.configuration.rangeNumber]
-			let inRange = true
 
 			///
 			// Ensure range is an object.
 			///
-			if(Validator.IsObject(range)) {
+			if(Validator.IsObject(range))
+			{
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinInclusive)) {
-					if(theValue < range[module.context.configuration.rangeNumberMinInclusive]) {
+					if(value < range[module.context.configuration.rangeNumberMinInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMinExclusive)) {
-					if(theValue <= range[module.context.configuration.rangeNumberMinExclusive]) {
+					if(value <= range[module.context.configuration.rangeNumberMinExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxInclusive)) {
-					if(theValue > range[module.context.configuration.rangeNumberMaxInclusive]) {
+					if(value > range[module.context.configuration.rangeNumberMaxInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeNumberMaxExclusive)) {
-					if(theValue >= range[module.context.configuration.rangeNumberMaxExclusive]) {
+					if(value >= range[module.context.configuration.rangeNumberMaxExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
@@ -1058,13 +1228,21 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			this.report = new ValidationReport('kRANGE_NOT_AN_OBJECT')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
+			const report =
+				new ValidationReport(
+					'kRANGE_NOT_AN_OBJECT',
+					theDescriptor._key,
+					range,
+					this.language
+				)
+
+			report.section = theSection
+
+			if(theReportIndex !== null) {
+				this.report[theReportIndex] = report
+			} else {
+				this.report = report
 			}
-			this.report.descriptor = theDescriptor
-			this.report.section = theSection
-			this.report.value = range
 
 			return false                                                // ==>
 
@@ -1085,53 +1263,60 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateStringRange(theValue, theDescriptor, theSection, theParent)
+	ValidateStringRange(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Check range.
 		///
-		if(theSection.hasOwnProperty(module.context.configuration.rangeString)) {
+		if(theSection.hasOwnProperty(module.context.configuration.rangeString))
+		{
+			const value = theContainer[theDescriptor._key]
 			const range = theSection[module.context.configuration.rangeString]
-			let inRange = true
 
 			///
 			// Ensure range is an object.
 			///
-			if(Validator.IsObject(range)) {
+			if(Validator.IsObject(range))
+			{
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinInclusive)) {
-					if(theValue < range[module.context.configuration.rangeStringMinInclusive]) {
+					if(value < range[module.context.configuration.rangeStringMinInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMinExclusive)) {
-					if(theValue <= range[module.context.configuration.rangeStringMinExclusive]) {
+					if(value <= range[module.context.configuration.rangeStringMinExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxInclusive)) {
-					if(theValue > range[module.context.configuration.rangeStringMaxInclusive]) {
+					if(value > range[module.context.configuration.rangeStringMaxInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeStringMaxExclusive)) {
-					if(theValue >= range[module.context.configuration.rangeStringMaxExclusive]) {
+					if(value >= range[module.context.configuration.rangeStringMaxExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
@@ -1140,13 +1325,21 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			this.report = new ValidationReport('kRANGE_NOT_AN_OBJECT')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
+			const report =
+				new ValidationReport(
+					'kRANGE_NOT_AN_OBJECT',
+					theDescriptor._key,
+					range,
+					this.language
+				)
+
+			report.section = theSection
+
+			if(theReportIndex !== null) {
+				this.report[theReportIndex] = report
+			} else {
+				this.report = report
 			}
-			this.report.descriptor = theDescriptor
-			this.report.section = theSection
-			this.report.value = range
 
 			return false                                                // ==>
 
@@ -1167,53 +1360,60 @@ class Validator
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	ValidateDateRange(theValue, theDescriptor, theSection, theParent)
+	ValidateDateRange(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
 		///
 		// Check range.
 		///
-		if(theSection.hasOwnProperty(module.context.configuration.rangeDate)) {
+		if(theSection.hasOwnProperty(module.context.configuration.rangeDate))
+		{
+			const value = theContainer[theDescriptor._key]
 			const range = theSection[module.context.configuration.rangeDate]
-			let inRange = true
 
 			///
 			// Ensure range is an object.
 			///
-			if(Validator.IsObject(range)) {
+			if(Validator.IsObject(range))
+			{
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinInclusive)) {
-					if(theValue < range[module.context.configuration.rangeDateMinInclusive]) {
+					if(value < range[module.context.configuration.rangeDateMinInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMinExclusive)) {
-					if(theValue <= range[module.context.configuration.rangeDateMinExclusive]) {
+					if(value <= range[module.context.configuration.rangeDateMinExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxInclusive)) {
-					if(theValue > range[module.context.configuration.rangeDateMaxInclusive]) {
+					if(value > range[module.context.configuration.rangeDateMaxInclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
 
 				if(range.hasOwnProperty(module.context.configuration.rangeDateMaxExclusive)) {
-					if(theValue >= range[module.context.configuration.rangeDateMaxExclusive]) {
+					if(value >= range[module.context.configuration.rangeDateMaxExclusive]) {
 						return setRangeError(
-							theValue, theDescriptor, theSection, theParent
+							value, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
 					}
 				}
@@ -1222,13 +1422,21 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			this.report = new ValidationReport('kRANGE_NOT_AN_OBJECT')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
+			const report =
+				new ValidationReport(
+					'kRANGE_NOT_AN_OBJECT',
+					theDescriptor._key,
+					range,
+					this.language
+				)
+
+			report.section = theSection
+
+			if(theReportIndex !== null) {
+				this.report[theReportIndex] = report
+			} else {
+				this.report = report
 			}
-			this.report.descriptor = theDescriptor
-			this.report.section = theSection
-			this.report.value = range
 
 			return false                                                // ==>
 
@@ -1244,135 +1452,38 @@ class Validator
 	 * This method will instantiate a range error and set the appropriate
 	 * status report fields, then return `false`.
 	 *
-	 * @param theValue {String|Number|Object}: Data value.
-	 * @param theDescriptor {String}: Descriptor global identifier.
-	 * @param theSection {Object}: Scalar descriptor section.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
 	 * @return {Boolean}: `false`.
 	 */
-	setRangeError(theValue, theDescriptor, theSection, theParent)
+	setRangeError(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
 	{
-		this.report = new ValidationReport('kVALUE_OUT_OF_RANGE')
-		if(theParent !== null) {
-			this.report.parentValue = theParent
+		const report =
+			new ValidationReport(
+				'kVALUE_OUT_OF_RANGE',
+				theDescriptor._key,
+				theContainer[theDescriptor._key],
+				this.language
+			)
+
+		report.section = theSection
+
+		if(theReportIndex !== null) {
+			this.report[theReportIndex] = report
+		} else {
+			this.report = report
 		}
-		this.report.descriptor = theDescriptor
-		this.report.section = theSection
-		this.report.value = theValue
 
 		return false                                                    // ==>
 
 	} // setRangeError()
-
-
-	/**
-	 * CACHE INTERFACE METHODS
-	 */
-
-
-	/**
-	 * getTerm
-	 *
-	 * This method will attempt to locate the term record matching the provided
-	 * global identifier.
-	 *
-	 * If the term was found it will be cached, if the `doCache` flag was set.
-	 *
-	 * If the term was not found, and the `doCheck` flag was set, the method
-	 * will set an error report stating that the term was not found. If the
-	 * `doMissing` flag was set, and the `doCache` flag also`, the missing
-	 * term will be cached.
-	 *
-	 * In all cases the method will return the term record, or `false\ if not
-	 * found.
-	 *
-	 * @param theTerm {String}: The global identifier.
-	 * @param doCheck {Boolean}: Raise an error if the term was not found.
-	 * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
-	 * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Object|Boolean}: `true` if descriptor, `false` if not.
-	 */
-	getTerm(
-		theTerm,
-		doCheck,
-		doCache,
-		doMissing,
-		theParent)
-	{
-		///
-		// Check term.
-		///
-		const term = this.cache.getTerm(theTerm, doCache, doMissing)
-		if(doCheck === true && term === false) {
-			this.report = new ValidationReport('kUNKNOWN_TERM')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
-			}
-			this.report.value = theTerm
-		}
-
-		return term                                                     // ==>
-
-	} // getTerm()
-
-	/**
-	 * getDescriptor
-	 *
-	 * This method will attempt to locate the term record matching the provided
-	 * global identifier and assert it is a descriptor.
-	 *
-	 * The method will first call the `getTerm()` method to resolve the global
-	 * identifier, raising an error if the term was not found. If the term was
-	 * found, the method will check if the term has the data section: if that is
-	 * not the case, the method will set a corresponding error report.
-	 *
-	 * In all cases the method will return the term record, or `false` and an
-	 * error report if not found or not a descriptor.
-	 *
-	 * @param theTerm {String}: The global identifier.
-	 * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
-	 * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
-	 * @param theParent {Array|Object}: Parent value, defaults to null.
-	 * @return {Object|Boolean}: `true` if descriptor, `false` if not.
-	 */
-	getDescriptor(
-		theTerm,
-		doCache,
-		doMissing,
-		theParent)
-	{
-		///
-		// Check term.
-		///
-		const term =
-			this.getTerm(
-				theTerm,
-				true,
-				doCache,
-				doMissing,
-				theParent
-			)
-		if(term === false) {
-			return false                                                // ==>
-		}
-
-		///
-		// Check descriptor.
-		///
-		if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
-			this.report = new ValidationReport('kNOT_A_DESCRIPTOR')
-			if(theParent !== null) {
-				this.report.parentValue = theParent
-			}
-			this.report.value = theTerm
-
-			return false                                                // ==>
-		}
-
-		return term                                                     // ==>
-
-	} // getDescriptor()
 
 
 	/**

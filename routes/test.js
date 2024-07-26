@@ -163,7 +163,7 @@ router.get(
 /**
  * Test ValidationReport()
  */
-router.get(
+router.post(
     'newValidationReport',
     function (req, res){
 
@@ -171,7 +171,7 @@ router.get(
         const descriptor = req.queryParams.descriptor
         const language = req.queryParams.language
 
-        const report = new ValidationReport(status, descriptor, language)
+        const report = new ValidationReport(status, descriptor, req.body, language)
 
         res.send(report)
 
@@ -193,6 +193,13 @@ router.get(
         joi.string().default('iso_639_3_eng'),
         "Status message language"
     )
+    .body(joi.alternatives().try(
+        joi.array(),
+        joi.object(),
+        joi.string(),
+        joi.number(),
+        joi.boolean()
+    ), dd`Incorrect value.`)
     .response(
         joi.array(),
         'ValidationStatus record.'
@@ -211,6 +218,8 @@ router.post(
                 req.queryParams.doZip,
                 req.queryParams.doCache,
                 req.queryParams.doMissing,
+                req.queryParams.doOnlyTerms,
+                req.queryParams.doDataType,
                 req.queryParams.doResolve,
                 req.queryParams.resolveCode
             )
@@ -241,6 +250,16 @@ router.post(
         "Cache unresolved terms"
     )
     .queryParam(
+        'doOnlyTerms',
+        joi.boolean().default(false),
+        "All properties must be terms"
+    )
+    .queryParam(
+        'doDataType',
+        joi.boolean().default(false),
+        "All descriptors must have the data type"
+    )
+    .queryParam(
         'doResolve',
         joi.boolean().default(false),
         "Try resolving enumeration codes"
@@ -256,7 +275,7 @@ router.post(
         joi.string(),
         joi.number(),
         joi.boolean()
-    ), dd`Accept any type of value..`)
+    ), dd`Accept any type of value.`)
     .response(
         joi.object(),
         'Validator record.'
@@ -276,6 +295,8 @@ router.post(
                 req.queryParams.doZip,
                 req.queryParams.doCache,
                 req.queryParams.doMissing,
+                req.queryParams.doOnlyTerms,
+                req.queryParams.doDataType,
                 req.queryParams.doResolve,
                 req.queryParams.resolveCode
             )
@@ -311,6 +332,16 @@ router.post(
         "Cache unresolved terms"
     )
     .queryParam(
+        'doOnlyTerms',
+        joi.boolean().default(false),
+        "All properties must be terms"
+    )
+    .queryParam(
+        'doDataType',
+        joi.boolean().default(false),
+        "All descriptors must have the data type"
+    )
+    .queryParam(
         'doResolve',
         joi.boolean().default(false),
         "Try resolving enumeration codes"
@@ -326,7 +357,7 @@ router.post(
         joi.string(),
         joi.number(),
         joi.boolean()
-    ), dd`Accept any type of value..`)
+    ), dd`Accept any type of value.`)
     .response(
         joi.object(),
         'Validator record.'

@@ -18,6 +18,7 @@
  *             code, message and status of the validation process.
  * - `descriptor`: The global identifier of the term corresponding to the value
  *                 descriptor.
+ * - `value`: The incorrect value.
  * - `changes`: During the validation process, if required, there can be cases
  *              in which an enyumeration code may be resolved in case it does
  *              not match exactly the full code: this field is an object that
@@ -45,11 +46,13 @@ class ValidationReport
 	 *
 	 * @param theStatusCode {Number}: The status code.
 	 * @param theDescriptor {String}: The descriptor global identifier.
+	 * @param theValue {Array|Object|Boolean|Number|String}: The incorrect value.
 	 * @param theLanguage {String}: The message language code.
 	 */
 	constructor(
 		theStatusCode = 'kOK',
 		theDescriptor = '',
+		theValue = null,
 		theLanguage = module.context.configuration.language
 	){
 		///
@@ -62,6 +65,13 @@ class ValidationReport
 		///
 		if(theDescriptor.length > 0) {
 			this.descriptor = theDescriptor
+		}
+
+		///
+		// Set value reference.
+		///
+		if(theValue !== null) {
+			this.value = theValue
 		}
 
 	} // constructor()
@@ -193,7 +203,7 @@ class ValidationStatus
 		"kMISSING_SCALAR_DATA_TYPE": {
 			"statusCode": 7,
 			"statusMessage": {
-				"iso_639_3_eng": `Invalid descriptor: missing data type (${module.context.configuration.scalarType}).`
+				"iso_639_3_eng": `Invalid descriptor: missing data type.`
 			}
 		},
 		"kNOT_A_BOOLEAN": {
