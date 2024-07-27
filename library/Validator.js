@@ -506,7 +506,7 @@ class Validator
 			///
 			// Assert term is a descriptor.
 			///
-			if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
+			if(!Validator.IsDescriptor(term)) {
 				status = this.setStatusReport(
 					'kNOT_A_DESCRIPTOR',
 					property,
@@ -1171,7 +1171,7 @@ class Validator
 					for(const kind of kinds) {
 						switch(kind) {
 							case module.context.configuration.anyEnum:
-								if(!term.hasOwnProperty(module.context.configuration.sectionPath)) {
+								if(!Validator.IsEnum(term)) {
 									return this.setStatusReport(
 										'kNOT_AN_ENUM',
 										key,
@@ -1183,7 +1183,7 @@ class Validator
 								break
 
 							case module.context.configuration.anyDescriptor:
-								if(!term.hasOwnProperty(module.context.configuration.sectionData)) {
+								if(!Validator.IsDescriptor(term)) {
 									return this.setStatusReport(
 										'kNOT_A_DESCRIPTOR',
 										key,
@@ -1195,7 +1195,7 @@ class Validator
 								break
 
 							case module.context.configuration.anyObject:
-								if(!term.hasOwnProperty(module.context.configuration.sectionRule)) {
+								if(!Validator.IsStruct(term)) {
 									return this.setStatusReport(
 										'kNOT_A_STRUCTURE_DEFINITION',
 										key,
@@ -1741,7 +1741,7 @@ class Validator
 	/**
 	 * IsBoolean
 	 * The method will return `true` if the provided value is a boolean.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if boolean, `false` if not.
 	 */
 	static IsBoolean(theValue)
@@ -1753,7 +1753,7 @@ class Validator
 	/**
 	 * IsInteger
 	 * The method will return `true` if the provided value is an integer.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if integer, `false` if not.
 	 */
 	static IsInteger(theValue)
@@ -1765,7 +1765,7 @@ class Validator
 	/**
 	 * IsNumber
 	 * The method will return `true` if the provided value is a number.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if number, `false` if not.
 	 */
 	static IsNumber(theValue)
@@ -1777,7 +1777,7 @@ class Validator
 	/**
 	 * IsString
 	 * The method will return `true` if the provided value is a string.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if string, `false` if not.
 	 */
 	static IsString(theValue)
@@ -1789,7 +1789,7 @@ class Validator
 	/**
 	 * IsArray
 	 * The method will return `true` if the provided value is an array.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if array, `false` if not.
 	 */
 	static IsArray(theValue)
@@ -1801,7 +1801,7 @@ class Validator
 	/**
 	 * IsObject
 	 * The method will return `true` if the provided value is an object.
-	 * @param theValue {Any}: The value to test.
+	 * @param theValue {Array|Object|Number|String}: The value to test.
 	 * @return {Boolean}: `true` if object, `false` if not.
 	 */
 	static IsObject(theValue)
@@ -1809,6 +1809,58 @@ class Validator
 		return _.isPlainObject(theValue)                            // ==>
 
 	} // Validator::IsObject()
+
+	/**
+	 * IsEnum
+	 * The method will return `true` if the provided term is an enumeration.
+	 * Note that this method expects the cache to be on.
+	 * @param theTerm {Object}: The value to test.
+	 * @param theEnum {String}: Optional enumeration type.
+	 * @return {Boolean}: `true` if object, `false` if not.
+	 */
+	static IsEnum(theTerm, theEnum = '')
+	{
+		if(theTerm.hasOwnProperty(module.context.configuration.sectionPath)) {
+			if(theEnum.length > 0) {
+				return theTerm[module.context.configuration.sectionPath]
+					.contains(theEnum)								// ==>
+			}
+		}
+
+		return false												// ==>
+
+	} // Validator::IsEnum()
+
+	/**
+	 * IsStruct
+	 * The method will return `true` if the provided term is an object definition.
+	 * Note that this method expects the cache to be on.
+	 * @param theTerm {Object}: The value to test.
+	 * @param theEnum {String}: Optional enumeration type.
+	 * @return {Boolean}: `true` if object, `false` if not.
+	 */
+	static IsStruct(theTerm, theEnum = '')
+	{
+		return theTerm.hasOwnProperty(
+			module.context.configuration.sectionRule
+		)															// ==>
+
+	} // Validator::IsStruct()
+
+	/**
+	 * IsDescriptor
+	 * The method will return `true` if the provided term is a descriptor.
+	 * Note that this method expects the cache to be on.
+	 * @param theTerm {Object}: The value to test.
+	 * @return {Boolean}: `true` if object, `false` if not.
+	 */
+	static IsDescriptor(theTerm)
+	{
+		return theTerm.hasOwnProperty(
+			module.context.configuration.sectionData
+		)															// ==>
+
+	} // Validator::IsDescriptor()
 
 } // class: Validator
 
