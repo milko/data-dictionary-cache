@@ -131,6 +131,11 @@ class Validator
 	 *
 	 * To trigger validation, once instantiated, call the validate() method.
 	 *
+	 * TODO: Currently, when providing an array of objects, we dont check if
+	 *       these objects are empty. Might need to reconsider if we allow
+	 *       empty objects at the service call level, at he property level
+	 *       we allow empty objects (see _data).
+	 *
 	 * @param theValue {Array|Object|Number|String}: The value to be checked.
 	 * @param theTerm {String}: The descriptor global identifier, defaults to
 	 *                          an empty string (no descriptor).
@@ -1127,7 +1132,7 @@ class Validator
 		theReportIndex)
 	{
 		///
-		// Handle string.
+		// Assert string.
 		///
 		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
 			return false                                                // ==>
@@ -1140,7 +1145,7 @@ class Validator
 		const value = theContainer[key]
 
 		///
-		// Prevent using default namespace.
+		// Assert not using default namespace.
 		///
 		if(value.length === 0) {
 			return this.setStatusReport(
@@ -1149,96 +1154,129 @@ class Validator
 		}
 
 		///
-		// Assert key matches a term.
+		// Assert jey regular expression.
 		///
-		const term = this.cache.getTerm(value)
-		if(term !== false)
+		if(!this.checkRegexp(
+			theContainer,
+			theDescriptor,
+			{
+				[module.context.configuration.regularExpression]:
+					"^[a-zA-Z0-9-:.@+,=;$!*'%()_]{1,254}$"
+			},
+			theReportIndex)
+		) {
+			return false                                                // ==>
+		}
+
+		///
+		// Handle data kind.
+		///
+		if(theSection.hasOwnProperty(module.context.configuration.dataKind))
 		{
 			///
-			// Check data kind.
+			// Assert kind is an array.
 			///
-			if(theSection.hasOwnProperty(module.context.configuration.dataKind))
+			const kinds = theSection[module.context.configuration.dataKind]
+			if(Validator.IsArray(kinds))
 			{
 				///
-				// Assert kind is an array.
+				// Assert value matches a term.
 				///
-				const kinds = theSection[module.context.configuration.dataKind]
-				if(Validator.IsArray(kinds))
+				const term = this.cache.getTerm(value)
+				if(term === false)
 				{
-					///
-					// Iterate and parse data kind elements.
-					///
-					for(const kind of kinds) {
-						switch(kind) {
-							case module.context.configuration.anyEnum:
-								if(!Validator.IsEnum(term)) {
-									return this.setStatusReport(
-										'kNOT_AN_ENUM',
-										key,
-										value,
-										theReportIndex,
-										{ "section": theSection}
-									)                                   // ==>
-								}
-								break
+					return this.setStatusReport(
+						'kUNKNOWN_TERM', key, value, theReportIndex
+					)                                                   // ==>
+				}
 
-							case module.context.configuration.anyDescriptor:
-								if(!Validator.IsDescriptor(term)) {
-									return this.setStatusReport(
-										'kNOT_A_DESCRIPTOR',
-										key,
-										value,
-										theReportIndex,
-										{ "section": theSection}
-									)                                   // ==>
-								}
-								break
+				///
+				// Iterate and parse data kind elements.
+				// Exit on first valid value.
+				// Exit if _kind is not _any-xxx.
+				// Log errors.
+				// Exit with last error.
+				///
+				let statusReport = {}     // Will hold last error.
+				// Loop breaks on first status === true.
+				for(const kind of kinds) {
+					switch(kind) {
+						case module.context.configuration.anyTerm:
+							return true                                 // ==>
 
-							case module.context.configuration.anyObject:
-								if(!Validator.IsStruct(term)) {
-									return this.setStatusReport(
-										'kNOT_A_STRUCTURE_DEFINITION',
-										key,
-										value,
-										theReportIndex,
-										{ "section": theSection}
-									)                                   // ==>
-								}
-								break
+						case module.context.configuration.anyEnum:
+							if(Validator.IsEnum(term)) {
+								return true                             // ==>
+							}
+							statusReport = {
+								"theStatus": 'kNOT_AN_ENUM',
+								"theDescriptor": key,
+								"theValue": value,
+								"theReportIndex": theReportIndex,
+								"theCustomFields": { "section": theSection }
+							}
+							break
 
-							default:
-								return this.setStatusReport(
-									'kNINVALID_DATA_KIND_OPTION',
-									module.context.configuration.dataKind,
-									kind,
-									theReportIndex,
-									{ "section": theSection}
-								)                                       // ==>
+						case module.context.configuration.anyDescriptor:
+							if(alidator.IsDescriptor(term)) {
+								return true                             // ==>
+							}
+							statusReport = {
+								"theStatus": 'kNOT_A_DESCRIPTOR',
+								"theDescriptor": key,
+								"theValue": value,
+								"theReportIndex": theReportIndex,
+								"theCustomFields": { "section": theSection }
+							}
+							break
 
-						} // Parsed allowed values.
-					}
+						case module.context.configuration.anyObject:
+							if(Validator.IsStruct(term)) {
+								return true                             // ==>
+							}
+							statusReport = {
+								"theStatus": 'kNOT_A_STRUCTURE_DEFINITION',
+								"theDescriptor": key,
+								"theValue": value,
+								"theReportIndex": theReportIndex,
+								"theCustomFields": { "section": theSection }
+							}
+							break
 
-					return true                                         // ==>
+						default:
+							return this.setStatusReport(
+								'kNINVALID_DATA_KIND_OPTION',
+								module.context.configuration.dataKind,
+								kind,
+								theReportIndex,
+								{ "section": theSection}
+							)                                           // ==>
 
-				} // Data kind is an array.
+					} // Parsed allowed values.
+
+				} // Iterating _kind elements.
 
 				return this.setStatusReport(
-					'kNOT_ARRAY_DATA_KIND',
-					module.context.configuration.dataKind,
-					kinds,
-					theReportIndex,
-					{ "section": theSection}
+					statusReport.theStatus,
+					statusReport.theDescriptor,
+					statusReport.theValue,
+					statusReport.theReportIndex,
+					statusReport.theCustomFields
 				)                                                       // ==>
 
-			} // Has data kind.
+			} // Data kind is an array.
 
-			return true                                                 // ==>
+			return this.setStatusReport(
+				'kNOT_ARRAY_DATA_KIND',
+				module.context.configuration.dataKind,
+				kinds,
+				theReportIndex,
+				{ "section": theSection}
+			)                                                           // ==>
 
-		} // Key matches a term.
+		} // Has data kind.
 
-		return this.setStatusReport(
-			'kUNKNOWN_TERM', key, value, theReportIndex
-		)                                                               // ==>
+		return true                                                     // ==>
 
 	} // doValidateKey()
 
