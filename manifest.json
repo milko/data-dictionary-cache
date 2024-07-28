@@ -49,6 +49,12 @@
             "required": true,
             "default": "VIEW_TERM"
         },
+        "defaultNamespaceKey": {
+            "description": "Default namespace actual key",
+            "type": "string",
+            "required": true,
+            "default": ":"
+        },
         "sectionCode": {
             "description": "Term codes section name key",
             "type": "string",

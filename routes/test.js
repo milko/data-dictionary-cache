@@ -221,6 +221,7 @@ router.post(
                 req.queryParams.doOnlyTerms,
                 req.queryParams.doDataType,
                 req.queryParams.doResolve,
+                req.queryParams.useDefNamespace,
                 req.queryParams.resolveCode
             )
 
@@ -265,6 +266,11 @@ router.post(
         "Try resolving enumeration codes"
     )
     .queryParam(
+        'useDefNamespace',
+        joi.boolean().default(false),
+        "Use default namespace"
+    )
+    .queryParam(
         'resolveCode',
         joi.string().default("_lid"),
         "Code section property for resolving"
@@ -298,6 +304,7 @@ router.post(
                 req.queryParams.doOnlyTerms,
                 req.queryParams.doDataType,
                 req.queryParams.doResolve,
+                req.queryParams.useDefNamespace,
                 req.queryParams.resolveCode
             )
 
@@ -345,6 +352,11 @@ router.post(
         'doResolve',
         joi.boolean().default(false),
         "Try resolving enumeration codes"
+    )
+    .queryParam(
+        'useDefNamespace',
+        joi.boolean().default(false),
+        "Use default namespace"
     )
     .queryParam(
         'resolveCode',

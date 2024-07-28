@@ -76,6 +76,66 @@ class TermsCache
     } // constructor()
 
     /**
+     * exists
+     *
+     * This method can be used to check if the provided document reference can
+     * be resolved.
+     *
+     * If `doCache` is true, the method will first check if the cache has a key
+     * matching the provided document handle, if that is the case it will return
+     * the value. If the handle cannot be matched in the cache, the method will
+     * check the database and if the handle can be resolved, `true` will be
+     * saved in the cache: if the handle was not resolved, and `doMissing` is
+     * true, `false` will be set in the cache.
+     *
+     * If `doCache` is false, neither matched nor unmatched handles will be
+     * stored in the cache.
+     *
+     * The method will return a boolean indicating whether the handle exists in
+     * the database or not. In no case the actual record will be stored
+     * anywhere.
+     *
+     * @param theHandle {String}: The document handle (`_id`).
+     * @param doCache {Boolean}: Check and store to cache, defaults to `true`.
+     * @param doMissing {Boolean}: Cache also missing terms, defaults to `true`.
+     *
+     * @return {Boolean}: Whether the handle was resolved or not.
+     */
+    exists(
+        theHandle,
+        doCache = true,
+        doMissing = false
+    ){
+        ///
+        // Check cache.
+        ///
+        if(doCache)
+        {
+            if(TermsCache.cache.hasOwnProperty(theHandle)) {
+                return true                                             // ==>
+            }
+
+            if(db._exists(theHandle) === false) {
+                if(doMissing) {
+                    TermsCache.cache[theHandle] = false
+                }
+
+                return false
+            }
+
+            if(doMissing) {
+                TermsCache.cache[theHandle] = true
+            }
+
+            return true                                                 // ==>
+
+        } // Use cache.
+
+        return (db._exists(theHandle) !== false)                        // ==>
+
+    } // exists()
+
+    /**
      * getTerm
      *
      * This method can be used to retrieve a partial term record given the term
@@ -399,6 +459,51 @@ class TermsCache
         `)                                                              // ==>
 
     } // QueryEnumTermByCode()
+
+    /**
+     * CheckHandle
+     *
+     * Use this method to check if the provided handle is correct.
+     *
+     * The method will not check if the document exists in the database, but
+     * will only assert that the code is compatible with ArangoDB.
+     *
+     * The method will return true if the handle is usable, false if not.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @param theHandle {String}: Document handle.
+      * @return {Boolean}: Returns true if the handle is usable, or not.
+     */
+    static CheckHandle(theHandle)
+    {
+        ///
+        // Divide the handle into its components.
+        ///
+        const parts = theHandle.split('/')
+        if(parts.length === 2)
+        {
+            ///
+            // Check collection name.
+            ///
+            const regexp = new RegExp("^[a-zA-Z0-9-_]{1,128}$")
+            if(parts[0].match(regexp))
+            {
+                ///
+                // Check document key.
+                ///
+                const regexp = new RegExp("^[a-zA-Z0-9-.@+,=;$!*'%()_]{1,254}$")
+                if(parts[1].match(regex)) {
+                    return true                                         // ==>
+                }
+
+            } // Valid collection name.
+
+        } // Has one slash.
+
+        return false                                                    // ==>
+
+    } // CheckHandle()
 
 } // Class: TermsCache
 

@@ -86,6 +86,17 @@ class Validator
 	 *                that is the case, the value will be replaced with the
 	 *                correct entry and no error issued. All resolved values are
 	 *                logged in the `resolved` data member.
+	 * - `doDefaultNamespace`: By default, any user-defined term that references
+	 *                         another term by key, cannot do so if the key is an
+	 *                         empty string. This prevents the use of the default
+	 *                         namespace. This flag will disable this check only
+	 *                         for the term namespace, this means that the term
+	 *                         namespace value will be allowed to be an empty
+	 *                         string, all other descriptors will require non
+	 *                         empty strings. *Note that the empty string will
+	 *                         have to be replaced by `:` for referencing the
+	 *                         default namespace, and that only to query the
+	 *                         database.
 	 * - `resolveCode`: This parameter is linked to the previous flag: if the
 	 *                  `doResolve` flag is set, this parameter allows you to
 	 *                  indicate which terms code section field should be
@@ -108,6 +119,7 @@ class Validator
 	 * - `cacheMissing`: Will receive the `doMissing` flag.
 	 * - `expectTerms`: Will receive thw `doOnlyTerms` flag.
 	 * - `expectType`: Will receive the `doDataType` flag.
+	 * - `defNamespace`: Will receive the `allowDefaultNamespace` flag.
 	 * - `language`: Will receive the language provided in validate() for report
 	 *               messages.
 	 *
@@ -131,11 +143,6 @@ class Validator
 	 *
 	 * To trigger validation, once instantiated, call the validate() method.
 	 *
-	 * TODO: Currently, when providing an array of objects, we dont check if
-	 *       these objects are empty. Might need to reconsider if we allow
-	 *       empty objects at the service call level, at he property level
-	 *       we allow empty objects (see _data).
-	 *
 	 * @param theValue {Array|Object|Number|String}: The value to be checked.
 	 * @param theTerm {String}: The descriptor global identifier, defaults to
 	 *                          an empty string (no descriptor).
@@ -150,6 +157,8 @@ class Validator
 	 * @param doDataType {Boolean}: Flag to require data type for all values.
 	 * @param doResolve {Boolean}: If true, resolve timestamps and eventual
 	 *                             unmatched enumerations, defaults to false.
+	 * @param doDefaultNamespace {Boolean}: If true, allow default namespace to
+	 *                                      be used, defaults to false.
 	 * @param resolveCode {String}: If doResolve is set, provide the term code
 	 *                              section property name where to match codes,
 	 *                              defaults to the local identifier code,
@@ -164,6 +173,7 @@ class Validator
 		doOnlyTerms = false,
 		doDataType = false,
 		doResolve = false,
+		doDefaultNamespace = false,
 		resolveCode = module.context.configuration.localIdentifier
 	){
 		///
@@ -187,6 +197,7 @@ class Validator
 		this.expectTerms =  Boolean(doOnlyTerms)
 		this.expectTerms =  Boolean(doOnlyTerms)
 		this.expectType = Boolean(doDataType)
+		this.defNamespace = Boolean(doDefaultNamespace)
 		this.resolver = resolveCode
 
 		///
@@ -709,6 +720,9 @@ class Validator
 						)                                               // ==>
 
 					case module.context.configuration.typeHandle:
+						return this.doValidateHandle(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 						return true
 
 					case module.context.configuration.typeEnum:
@@ -1113,8 +1127,21 @@ class Validator
 	 * This method will validate the provided key value.
 	 *
 	 * The method will first assert if the value is a string.
-	 * The method will then that the string corresponds to a term.
+	 * Then it will assert that the string is not empty (default namespace).
+	 * The method will then check that the string corresponds to a term.
 	 * Finally, the method will check the eventual data kind.
+	 *
+	 * Note that two special values will be checked:
+	 *
+	 * - Empty string: By default an empty string term reference is a reference
+	 *                 to the *default namespace*. Referencing this namespace is
+	 *                 only allowed if this object was instantiated with the
+	 *                 `defNamespace` member set to true.
+	 * - `":"``: This is the actual key of the default namespace, for this
+	 *           reason it is not allowed to be used as a term key, except,
+	 *           obviously, for the default namespace. Since this object is only
+	 *           concerned in validating existing objects, we forbid the use of
+	 *           this value as a term reference.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1143,30 +1170,47 @@ class Validator
 		///
 		const key = theDescriptor._key
 		const value = theContainer[key]
+		const regex = "^[a-zA-Z0-9-:.@+,=;$!*'%()_]{1,254}$"
+		const reference = (value.length === 0)
+								 ? module.context.configuration.defaultNamespaceKey
+								 : value
 
 		///
-		// Assert not using default namespace.
+		// Forbid direct reference to default namespace.
 		///
-		if(value.length === 0) {
+		if(value === module.context.configuration.defaultNamespaceKey) {
 			return this.setStatusReport(
-				'kEMPTY_KEY', key, value, theReportIndex
+				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
 			)                                                           // ==>
 		}
 
 		///
-		// Assert jey regular expression.
+		// Prevent referencing default namespace.
 		///
-		if(!this.checkRegexp(
-			theContainer,
-			theDescriptor,
-			{
-				[module.context.configuration.regularExpression]:
-					"^[a-zA-Z0-9-:.@+,=;$!*'%()_]{1,254}$"
-			},
-			theReportIndex)
-		) {
-			return false                                                // ==>
-		}
+		if(!this.defNamespace)
+		{
+			///
+			// Prevent empty string.
+			///
+			if(value.length === 0) {
+				return this.setStatusReport(
+					'kEMPTY_KEY', key, value, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Assert the regular expression.
+			///
+			if(!this.checkRegexp(
+				theContainer,
+				theDescriptor,
+				{ [module.context.configuration.regularExpression]: regex },
+				theReportIndex)
+			) {
+				return false                                            // ==>
+			}
+
+		} // Prevent referencing default namespace.
 
 		///
 		// Handle data kind.
@@ -1182,7 +1226,10 @@ class Validator
 				///
 				// Assert value matches a term.
 				///
-				const term = this.cache.getTerm(value)
+				const term =
+					this.cache.getTerm(
+						reference, this.useCache, this.cacheMissing
+					)
 				if(term === false)
 				{
 					return this.setStatusReport(
@@ -1218,7 +1265,7 @@ class Validator
 							break
 
 						case module.context.configuration.anyDescriptor:
-							if(alidator.IsDescriptor(term)) {
+							if(Validator.IsDescriptor(term)) {
 								return true                             // ==>
 							}
 							statusReport = {
@@ -1279,6 +1326,61 @@ class Validator
 		return true                                                     // ==>
 
 	} // doValidateKey()
+
+	/**
+	 * doValidateHandle
+	 *
+	 * This method will validate the provided handle value.
+	 *
+	 * The method will first assert if the value is a string.
+	 * Finally, the method will assert that the document exists.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateHandle(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Assert string.
+		///
+		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+			return false                                                // ==>
+		}
+
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const value = theContainer[key]
+
+		///
+		// Validate handle.
+		///
+
+
+		///
+		// Assert the document exists.
+		///
+		if(!this.cache.exists(value, this.useCache, this.cacheMissing)) {
+			return this.setStatusReport(
+				'kUNKNOWN_DOCUMENT', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+
+		return true                                                     // ==>
+
+	} // doValidateHandle()
 
 
 	/**

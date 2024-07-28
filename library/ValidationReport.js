@@ -284,7 +284,7 @@ class ValidationStatus
 		"kEMPTY_KEY": {
 			"statusCode": 18,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided key cannot reference the default namespace."
+				"iso_639_3_eng": "The provided key cannot be an empty string."
 			}
 		},
 		"kNOT_AN_ENUM": {
@@ -297,6 +297,18 @@ class ValidationStatus
 			"statusCode": 20,
 			"statusMessage": {
 				"iso_639_3_eng": "The provided key is not a structure definition reference."
+			}
+		},
+		"kNO_REF_DEFAULT_NAMESPACE_KEY": {
+			"statusCode": 21,
+			"statusMessage": {
+				"iso_639_3_eng": "You cannot use this value as the key for a term: it is reserved to the default namespace: use an empty string to reference the default namespace."
+			}
+		},
+		"kUNKNOWN_DOCUMENT": {
+			"statusCode": 22,
+			"statusMessage": {
+				"iso_639_3_eng": "Document not found in the database."
 			}
 		}
 	}
