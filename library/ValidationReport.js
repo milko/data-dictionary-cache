@@ -346,6 +346,18 @@ class ValidationStatus
 			"statusMessage": {
 				"iso_639_3_eng": "Provided enumeration is not a valid option."
 			}
+		},
+		"kUNKNOWN_DESCRIPTOR": {
+			"statusCode": 28,
+			"statusMessage": {
+				"iso_639_3_eng": "Unknown descriptor."
+			}
+		},
+		"kDESCRIPTOR_NOT_DESCRIPTOR": {
+			"statusCode": 29,
+			"statusMessage": {
+				"iso_639_3_eng": "The property is not a descriptor."
+			}
 		}
 	}
 

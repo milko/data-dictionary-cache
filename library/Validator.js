@@ -508,9 +508,9 @@ class Validator
 			if(term === false) {
 				if(this.expectTerms) {
 					status = this.setStatusReport(
-						'kUNKNOWN_TERM',
+						'kUNKNOWN_DESCRIPTOR',
 						property,
-						theContainer[property],
+						theContainer,
 						theReportIndex
 					)
 
@@ -525,7 +525,7 @@ class Validator
 			///
 			if(!Validator.IsDescriptor(term)) {
 				status = this.setStatusReport(
-					'kNOT_A_DESCRIPTOR',
+					'kDESCRIPTOR_NOT_DESCRIPTOR',
 					property,
 					theContainer,
 					theReportIndex
