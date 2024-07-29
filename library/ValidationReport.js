@@ -314,7 +314,25 @@ class ValidationStatus
 		"kBAD_KEY_VALUE": {
 			"statusCode": 23,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid value for document keys."
+				"iso_639_3_eng": "Invalid value for document key."
+			}
+		},
+		"kBAD_HANDLE_VALUE": {
+			"statusCode": 24,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid value for document handle."
+			}
+		},
+		"kBAD_COLLECTION_NAME": {
+			"statusCode": 25,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid value for collection name."
+			}
+		},
+		"kUNKNOWN_COLLECTION": {
+			"statusCode": 26,
+			"statusMessage": {
+				"iso_639_3_eng": "Collection does not exist in the database."
 			}
 		}
 	}

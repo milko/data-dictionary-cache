@@ -1339,7 +1339,7 @@ class Validator
 	 * This method will validate the provided handle value.
 	 *
 	 * The method will first assert if the value is a string.
-	 * Finally, the method will assert that the document exists.
+	 * Finally, the method will assert that the document documentExists.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1372,19 +1372,63 @@ class Validator
 		///
 		// Validate handle.
 		///
-
-
 		///
-		// Assert the document exists.
+		// Divide the handle into its components.
 		///
-		if(!this.cache.exists(value, this.useCache, this.cacheMissing)) {
+		const parts = value.split('/')
+		if(parts.length === 2)
+		{
+			///
+			// Check collection name.
+			///
+			if(TermsCache.CheckCollectionName(parts[0]))
+			{
+				///
+				// Check collection.
+				///
+				if(this.cache.collectionExists(parts[0]))
+				{
+					///
+					// Check document key.
+					///
+					if(TermsCache.CheckKeyValue(parts[1]))
+					{
+						///
+						// Assert the document documentExists.
+						///
+						if(this.cache.documentExists(value, this.useCache, this.cacheMissing))
+						{
+							return true                                 // ==>
+
+						} // Document documentExists.
+
+						return this.setStatusReport(
+							'kUNKNOWN_DOCUMENT', key, value, theReportIndex
+						)                                               // ==>
+
+					} // Document key OK.
+
+					return this.setStatusReport(
+						'kBAD_KEY_VALUE', key, value, theReportIndex
+					)                                                   // ==>
+
+				} // Collection documentExists.
+
+				return this.setStatusReport(
+					'kUNKNOWN_COLLECTION', key, value, theReportIndex
+				)                                                       // ==>
+
+			} // Collection name OK.
+
 			return this.setStatusReport(
-				'kUNKNOWN_DOCUMENT', key, value, theReportIndex
+				'kBAD_COLLECTION_NAME', key, value, theReportIndex
 			)                                                           // ==>
-		}
 
+		} // Has one slash.
 
-		return true                                                     // ==>
+		return this.setStatusReport(
+			'kBAD_HANDLE_VALUE', key, value, theReportIndex
+		)                                                               // ==>
 
 	} // doValidateHandle()
 

@@ -82,7 +82,7 @@ class TermsCache
     } // constructor()
 
     /**
-     * exists
+     * documentExists
      *
      * This method can be used to check if the provided document reference can
      * be resolved.
@@ -97,7 +97,7 @@ class TermsCache
      * If `doCache` is false, neither matched nor unmatched handles will be
      * stored in the cache.
      *
-     * The method will return a boolean indicating whether the handle exists in
+     * The method will return a boolean indicating whether the handle documentExists in
      * the database or not. In no case the actual record will be stored
      * anywhere.
      *
@@ -107,7 +107,7 @@ class TermsCache
      *
      * @return {Boolean}: Whether the handle was resolved or not.
      */
-    exists(
+    documentExists(
         theHandle,
         doCache = true,
         doMissing = false
@@ -139,7 +139,26 @@ class TermsCache
 
         return (db._exists(theHandle) !== false)                        // ==>
 
-    } // exists()
+    } // documentExists()
+
+    /**
+     * collectionExists
+     *
+     * Use this method to check if the provided collection documentExists.
+     *
+     * The method will return true if the collection documentExists, false if not.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @param theName {String}: Collection name.
+     *
+     * @return {Boolean}: Returns true if the collection exists, or not.
+     */
+    collectionExists(theName)
+    {
+        return (db._collection(theName) !== null)                       // ==>
+
+    } // collectionExists()
 
     /**
      * getTerm
@@ -156,7 +175,7 @@ class TermsCache
      * the cache, if the term cannot be found, the method will query the
      * database. If the term was found, it will be stripped of all top level
      * properties, except `_key`, `_data` and `_rule`, and the method will check
-     * if an edge exists with the term as the `_from` property and the
+     * if an edge documentExists with the term as the `_from` property and the
      * `_predicate_enum-of` as the predicate: in that case the `_path` property
      * of the edge will be added to the term's top level. This is the record
      * that will be returned by the method.
@@ -478,7 +497,7 @@ class TermsCache
      *
      * Use this method to check if the provided handle is correct.
      *
-     * The method will not check if the document exists in the database, but
+     * The method will not check if the document documentExists in the database, but
      * will only assert that the code is compatible with ArangoDB.
      *
      * The method will return true if the handle is usable, false if not.
@@ -529,7 +548,7 @@ class TermsCache
      *
      * @param theName {String}: Document handle.
      *
-     * @return {Boolean}: Returns true if the handle is usable, or not.
+     * @return {Boolean}: Returns true if the collection name is usable, or not.
      */
     static CheckCollectionName(theName)
     {
