@@ -310,6 +310,12 @@ class ValidationStatus
 			"statusMessage": {
 				"iso_639_3_eng": "Document not found in the database."
 			}
+		},
+		"kBAD_KEY_VALUE": {
+			"statusCode": 23,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid value for document keys."
+			}
 		}
 	}
 

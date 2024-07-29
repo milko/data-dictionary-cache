@@ -42,6 +42,12 @@ const view_terms = {
  * Note that this cache is generally used for validation purposes, so stored
  * terms will only feature the `_key`, `_data`, `_rule` and the `_path`
  * properties, this to minimise the size of the cache.
+ *
+ * The class also features a series of static methods for resolving enumerations
+ * and two static methods, one to validate collectionames and the other to
+ * validate a document key vallue. Not that the latter two methods should always
+ * be used to check collection and key names, so that the regular expressions
+ * are kept in a single place.
  */
 class TermsCache
 {
@@ -355,8 +361,9 @@ class TermsCache
 
 
     /**
-     * STATIC METHODS
+     * STATIC ENUMERATION METHODS
      */
+
 
     /**
      * QueryEnumIdentifierByCode
@@ -460,6 +467,12 @@ class TermsCache
 
     } // QueryEnumTermByCode()
 
+
+    /**
+     * STATIC VALIDATION METHODS
+     */
+
+
     /**
      * CheckHandle
      *
@@ -473,7 +486,7 @@ class TermsCache
      * The cache is not consulted by this method.
      *
      * @param theHandle {String}: Document handle.
-      * @return {Boolean}: Returns true if the handle is usable, or not.
+     * @return {Boolean}: Returns true if the handle is usable, or not.
      */
     static CheckHandle(theHandle)
     {
@@ -486,24 +499,103 @@ class TermsCache
             ///
             // Check collection name.
             ///
-            const regexp = new RegExp("^[a-zA-Z0-9-_]{1,128}$")
-            if(parts[0].match(regexp))
+            if(TermsCache.CheckCollectionName(parts[0]))
             {
                 ///
                 // Check document key.
                 ///
-                const regexp = new RegExp("^[a-zA-Z0-9-.@+,=;$!*'%()_]{1,254}$")
-                if(parts[1].match(regex)) {
+                if(TermsCache.CheckKeyValue(parts[1]))
+                {
                     return true                                         // ==>
-                }
 
-            } // Valid collection name.
+                } // Document key OK.
+
+            } // Collection name OK.
 
         } // Has one slash.
 
         return false                                                    // ==>
 
     } // CheckHandle()
+
+    /**
+     * CheckCollectionName
+     *
+     * Use this method to check if the provided collection name is valid.
+     *
+     * The method will return true if the name is usable, false if not.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @param theName {String}: Document handle.
+     *
+     * @return {Boolean}: Returns true if the handle is usable, or not.
+     */
+    static CheckCollectionName(theName)
+    {
+        ///
+        // Init local storage.
+        ///
+        const regexp = new RegExp("^[a-zA-Z0-9-_]{1,128}$")
+
+        return Boolean(theName.match(regexp))                           // ==>
+
+    } // CheckCollectionName()
+
+    /**
+     * CheckKeyValue
+     *
+     * Use this method to check if the provided key value is valid.
+     *
+     * The method will return true if the value is usable, false if not.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @param theValue {String}: Document handle.
+     *
+     * @return {Boolean}: Returns true if the handle is usable, or not.
+     */
+    static CheckKeyValue(theValue)
+    {
+        ///
+        // Init local storage.
+        ///
+        const regexp = new RegExp("^[a-zA-Z0-9-.@+,=;$!*'%()_]{1,254}$")
+
+        return Boolean(theValue.match(regexp))                           // ==>
+
+    } // CheckKeyValue()
+
+
+    /**
+     * STATIC SYMBOLS
+     */
+
+
+    /**
+     * DefaultNamespaceKey
+     *
+     * Use this method to get the default namespace document key.
+     *
+     * The default namespace should only be referenced by the namespace
+     * property in the code section of the term. When setting the namespace to
+     * an empty string, it means that the current term has the default
+     * namespace. User defined terms should not reference this namespace.
+     * Since it is forbidden to have an empty string as key, we assign a
+     * specific value to reference the default namespace. Note that this term
+     * should always be expected to exist in the database.
+     *
+     * The method will return the document key of the default namespace term.
+     *
+     * The cache is not consulted by this method.
+     *
+     * @return {String}: Returns the document key of the default namespace term.
+     */
+    static DefaultNamespaceKey()
+    {
+        return ';'                                                      // ==>
+
+    } // DefaultNamespaceKey()
 
 } // Class: TermsCache
 

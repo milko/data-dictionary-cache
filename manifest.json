@@ -49,12 +49,6 @@
             "required": true,
             "default": "VIEW_TERM"
         },
-        "defaultNamespaceKey": {
-            "description": "Default namespace actual key",
-            "type": "string",
-            "required": true,
-            "default": ":"
-        },
         "sectionCode": {
             "description": "Term codes section name key",
             "type": "string",
@@ -120,6 +114,12 @@
             "type": "string",
             "required": true,
             "default": "_predicate_enum-of"
+        },
+        "namespaceIdentifier": {
+            "description": "Namespace identifier key",
+            "type": "string",
+            "required": true,
+            "default": "_nid"
         },
         "localIdentifier": {
             "description": "Local identifier key",

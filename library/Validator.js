@@ -11,6 +11,7 @@ const _ = require('lodash')
 const crypto = require('@arangodb/crypto')
 const TermsCache = require('./TermsCache')
 const ValidationReport = require('./ValidationReport')
+const TermsKeys = require("./TermsCache");
 
 /**
  * Validator
@@ -1170,47 +1171,52 @@ class Validator
 		///
 		const key = theDescriptor._key
 		const value = theContainer[key]
-		const regex = "^[a-zA-Z0-9-:.@+,=;$!*'%()_]{1,254}$"
 		const reference = (value.length === 0)
-								 ? module.context.configuration.defaultNamespaceKey
+								 ? TermsCache.DefaultNamespaceKey()
 								 : value
+
+		///
+		// Handle default namespace reference.
+		///
+		if(value.length === 0)
+		{
+			///
+			// Handle dictionary term and namespace field.
+			///
+			if(this.defNamespace &&
+				key === module.context.configuration.namespaceIdentifier) {
+				return true                                             // ==>
+			}
+
+			///
+			// Handle user term or field other than _nid.
+			///
+			if((!this.defNamespace) ||
+				(key !== module.context.configuration.namespaceIdentifier)) {
+				return this.setStatusReport(
+					'kEMPTY_KEY', key, value, theReportIndex
+				)                                                       // ==>
+			}
+
+		} // Provided default namespace reference.
 
 		///
 		// Forbid direct reference to default namespace.
 		///
-		if(value === module.context.configuration.defaultNamespaceKey) {
+		if(value === TermsKeys.DefaultNamespaceKey()) {
 			return this.setStatusReport(
 				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
 			)                                                           // ==>
 		}
 
 		///
-		// Prevent referencing default namespace.
+		// Validate document key value.
 		///
-		if(!this.defNamespace)
-		{
-			///
-			// Prevent empty string.
-			///
-			if(value.length === 0) {
-				return this.setStatusReport(
-					'kEMPTY_KEY', key, value, theReportIndex
-				)                                                       // ==>
-			}
-
-			///
-			// Assert the regular expression.
-			///
-			if(!this.checkRegexp(
-				theContainer,
-				theDescriptor,
-				{ [module.context.configuration.regularExpression]: regex },
-				theReportIndex)
-			) {
-				return false                                            // ==>
-			}
-
-		} // Prevent referencing default namespace.
+		if(!TermsCache.CheckKeyValue(value)) {
+			return this.setStatusReport(
+				'kBAD_KEY_VALUE', key, value, theReportIndex
+			)                                                           // ==>
+		}
 
 		///
 		// Handle data kind.
