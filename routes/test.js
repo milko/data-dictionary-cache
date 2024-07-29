@@ -89,20 +89,22 @@ router.post(
     )
 
 /**
- * Test TermsCache::QueryEnumIdentifierByCode()
+ * Test TermsCache.queryEnumIdentifierByCode()
  */
 router.get(
-    'QueryEnumIdentifierByCode',
+    'queryEnumIdentifierByCode',
     function (req, res){
+
+        const cache = new TermsCache()
 
         const field = req.queryParams.field
         const code = req.queryParams.code
         const type = req.queryParams.type
 
-        res.send(TermsCache.QueryEnumIdentifierByCode(field, code, type))
+        res.send(cache.queryEnumIdentifierByCode(field, code, type))
 
-    }, 'QueryEnumIdentifierByCode')
-    .summary('Test QueryEnumIdentifierByCode()')
+    }, 'queryEnumIdentifierByCode')
+    .summary('Test queryEnumIdentifierByCode()')
     .description(dd`Retrieve enumeration term global identifier given local identifier and enumeration path.`)
     .queryParam(
         'field',
@@ -310,10 +312,11 @@ router.post(
 
         const status = validator.validate()
 
-        res.send({
-            "status": status,
-            "validator": validator
-        })
+        // res.send({
+        //     "status": status,
+        //     "validator": validator
+        // })
+        res.send(validator)
 
     }, 'Validator::validate()')
     .summary('Test Validator::validate()')

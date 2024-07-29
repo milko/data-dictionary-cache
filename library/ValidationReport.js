@@ -145,7 +145,13 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
-		"kNINVALID_DATA_KIND_OPTION": {
+		"kMISSING_DATA_KIND": {
+			"statusCode": -5,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid data section: missing data kind."
+			}
+		},
+		"kINVALID_DATA_KIND_OPTION": {
 			"statusCode": -4,
 			"statusMessage": {
 				"iso_639_3_eng": "Invalid data section: string key data type features an invalid option."
@@ -290,7 +296,7 @@ class ValidationStatus
 		"kNOT_AN_ENUM": {
 			"statusCode": 19,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided key is not an enumeration element reference."
+				"iso_639_3_eng": "The provided value is not an enumeration element reference."
 			}
 		},
 		"kNOT_A_STRUCTURE_DEFINITION": {
@@ -333,6 +339,12 @@ class ValidationStatus
 			"statusCode": 26,
 			"statusMessage": {
 				"iso_639_3_eng": "Collection does not exist in the database."
+			}
+		},
+		"kNOT_CORRECT_ENUM_TYPE": {
+			"statusCode": 27,
+			"statusMessage": {
+				"iso_639_3_eng": "Provided enumeration is not a valid option."
 			}
 		}
 	}

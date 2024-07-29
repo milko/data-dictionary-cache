@@ -43,9 +43,9 @@ const view_terms = {
  * terms will only feature the `_key`, `_data`, `_rule` and the `_path`
  * properties, this to minimise the size of the cache.
  *
- * The class also features a series of static methods for resolving enumerations
- * and two static methods, one to validate collectionames and the other to
- * validate a document key vallue. Not that the latter two methods should always
+ * The class also features a series of methods for resolving enumerations
+ * and two other methods, one to validate collection names and the other to
+ * validate a document key value. Note that the latter two methods should always
  * be used to check collection and key names, so that the regular expressions
  * are kept in a single place.
  */
@@ -408,7 +408,7 @@ class TermsCache
      * @return {[String]}: The list of term global identifiers matching code and
      * type.
      */
-    static QueryEnumIdentifierByCode(theField, theValue, theEnum)
+    queryEnumIdentifierByCode(theField, theValue, theEnum)
     {
         ///
         // Query the database.
@@ -425,9 +425,9 @@ class TermsCache
               FILTER edge.${module.context.configuration.predicate} == ${module.context.configuration.predicateEnumeration}
               FILTER CONCAT_SEPARATOR("/", ${module.context.configuration.collectionTerm}, ${theEnum}) IN edge.${module.context.configuration.sectionPath}
             RETURN PARSE_IDENTIFIER(edge._from).key
-        `)                                                              // ==>
+        `).toArray()                                                    // ==>
 
-    } // QueryEnumIdentifierByCode()
+    } // queryEnumIdentifierByCode()
 
     /**
      * QueryEnumTermByCode

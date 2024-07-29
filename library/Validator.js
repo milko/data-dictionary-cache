@@ -724,9 +724,11 @@ class Validator
 						return this.doValidateHandle(
 							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
-						return true
 
 					case module.context.configuration.typeEnum:
+						return this.doValidateEnum(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 						return true
 
 					case module.context.configuration.typeDate:
@@ -1171,9 +1173,6 @@ class Validator
 		///
 		const key = theDescriptor._key
 		const value = theContainer[key]
-		const reference = (value.length === 0)
-								 ? TermsCache.DefaultNamespaceKey()
-								 : value
 
 		///
 		// Handle default namespace reference.
@@ -1234,7 +1233,7 @@ class Validator
 				///
 				const term =
 					this.cache.getTerm(
-						reference, this.useCache, this.cacheMissing
+						value, this.useCache, this.cacheMissing
 					)
 				if(term === false)
 				{
@@ -1298,7 +1297,7 @@ class Validator
 
 						default:
 							return this.setStatusReport(
-								'kNINVALID_DATA_KIND_OPTION',
+								'kINVALID_DATA_KIND_OPTION',
 								module.context.configuration.dataKind,
 								kind,
 								theReportIndex,
@@ -1431,6 +1430,233 @@ class Validator
 		)                                                               // ==>
 
 	} // doValidateHandle()
+
+	/**
+	 * doValidateEnum
+	 *
+	 * This method will validate the provided enumeration element.
+	 *
+	 * The method will first assert if the value is a string.
+	 * Then it will assert that the string is not empty.
+	 * The method will then check that the string corresponds to a term, if that
+	 * is the case, it will check the eventual data kinds.
+	 *
+	 * The method will return `true` if enum, or `false` if not.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateEnum(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Assert string.
+		///
+		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+			return false                                                // ==>
+		}
+
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const value = theContainer[key]
+
+		///
+		// Validate key value.
+		///
+		if(!TermsCache.CheckKeyValue(value)) {
+			return this.setStatusReport(
+				'kBAD_KEY_VALUE', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		///
+		// Assert data kind.
+		///
+		if(!theSection.hasOwnProperty(module.context.configuration.dataKind)) {
+			return this.setStatusReport(
+				'kMISSING_DATA_KIND',
+				key,
+				value,
+				theReportIndex,
+				{ "section": theSection}
+			)                                                           // ==>
+		}
+
+		///
+		// Save data kinds.
+		///
+		const kinds = theSection[module.context.configuration.dataKind]
+
+		///
+		// Assert data kinds.
+		///
+		if(!Validator.IsArray(kinds)) {
+			return this.setStatusReport(
+				'kNOT_ARRAY_DATA_KIND',
+				module.context.configuration.dataKind,
+				kinds,
+				theReportIndex,
+				{ "section": theSection}
+			)                                                           // ==>
+		}
+
+		///
+		// Get term.
+		///
+		const term = this.cache.getTerm(
+			value, this.useCache, this.cacheMissing
+		)
+
+		///
+		// Assert existing term.
+		///
+		if(term === false) {
+			if(this.resolve) {
+				return this.doResolveEnum(
+					theContainer, theDescriptor, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			return this.setStatusReport(
+				'kUNKNOWN_TERM', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		///
+		// Check if it is an enumeration element.
+		///
+		if(!term.hasOwnProperty(module.context.configuration.sectionPath)) {
+			return this.setStatusReport(
+				'kNOT_AN_ENUM', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		///
+		// Save paths.
+		///
+		const paths = term[module.context.configuration.sectionPath]
+
+		///
+		// Match enumeration path with data kinds.
+		///
+		if(kinds.some( (element) => paths.includes(element))) {
+			return true                                                 // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_CORRECT_ENUM_TYPE',
+			key,
+			value,
+			theReportIndex,
+			{ "section": theSection}
+		)                                                               // ==>
+
+	} // doValidateEnum()
+
+	/**
+	 * doResolveEnum
+	 *
+	 * This method will try to resolve the current value into a valid
+	 * enumeration by testing if the current value corresponds to the value in
+	 * the field set in the current `resolver` property of the current object.
+	 *
+	 * The method will first check if the `resolve` property of the current
+	 * object is set, if that is not the case, the method will return a
+	 * `kUNKNOWN_TERM` error.
+	 *
+	 * Then it will check if the current value corresponds to the value of the
+	 * code section field whose name is in the `resolver` property of the
+	 * current object, and if the eventual matched term is an enumeration
+	 * belonging to one of the data kinds of the current descriptor. If that id
+	 * the case, the current value will be replaced with the matching term's
+	 * global identifier, the value change will be logged and the method will
+	 * return true.
+	 *
+	 * If the value cannot be resolved, the method will return a `kUNKNOWN_TERM`
+	 * error report.
+	 *
+	 * *The method expects the descriptor to have the data kinds section and
+	 * that the value is an array.*
+	 *
+	 * The method will return `true` if resolved, or `false` if not.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doResolveEnum(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const value = theContainer[key]
+
+		///
+		// Check the resolve flag.
+		///
+		if(!this.resolve) {
+			return this.setStatusReport(
+				'kUNKNOWN_TERM', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		///
+		// Iterate data kinds.
+		///
+		let resolved = null
+		theSection[module.context.configuration.dataKind].some( (type) => {
+			const terms = this.cache.queryEnumIdentifierByCode(
+				this.resolver, value, type
+			)
+
+			if(terms.length === 1) {
+				resolved = terms[0]
+				return true
+			}
+		})
+
+		///
+		// Found a match.
+		///
+		if(resolved !== null)
+		{
+			///
+			// Replace value.
+			///
+			theContainer[theDescriptor._key] = resolved
+
+			///
+			// Log changes.
+			///
+			this.logResolvedValues(
+				key, value, resolved, theReportIndex
+			)
+
+			return true                                                 // ==>
+		}
+
+		return this.setStatusReport(
+			'kUNKNOWN_TERM', key, value, theReportIndex
+		)                                                               // ==>
+
+	} // doResolveEnum()
 
 
 	/**
