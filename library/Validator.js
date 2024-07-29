@@ -1230,6 +1230,8 @@ class Validator
 			{
 				///
 				// Assert value matches a term.
+				// We do this because we only expect term reference qualifiers
+				// in the data kind, so the term must exist.
 				///
 				const term =
 					this.cache.getTerm(
@@ -1238,7 +1240,7 @@ class Validator
 				if(term === false)
 				{
 					return this.setStatusReport(
-						'kUNKNOWN_TERM', key, value, theReportIndex
+						'kVALUE_NOT_TERM', key, value, theReportIndex
 					)                                                   // ==>
 				}
 
@@ -1527,7 +1529,7 @@ class Validator
 			}
 
 			return this.setStatusReport(
-				'kUNKNOWN_TERM', key, value, theReportIndex
+				'kVALUE_NOT_TERM', key, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1571,7 +1573,7 @@ class Validator
 	 *
 	 * The method will first check if the `resolve` property of the current
 	 * object is set, if that is not the case, the method will return a
-	 * `kUNKNOWN_TERM` error.
+	 * `kVALUE_NOT_TERM` error.
 	 *
 	 * Then it will check if the current value corresponds to the value of the
 	 * code section field whose name is in the `resolver` property of the
@@ -1581,8 +1583,8 @@ class Validator
 	 * global identifier, the value change will be logged and the method will
 	 * return true.
 	 *
-	 * If the value cannot be resolved, the method will return a `kUNKNOWN_TERM`
-	 * error report.
+	 * If the value cannot be resolved, the method will return a
+	 * `kVALUE_NOT_TERM` error report.
 	 *
 	 * *The method expects the descriptor to have the data kinds section and
 	 * that the value is an array.*
@@ -1613,7 +1615,7 @@ class Validator
 		///
 		if(!this.resolve) {
 			return this.setStatusReport(
-				'kUNKNOWN_TERM', key, value, theReportIndex
+				'kVALUE_NOT_TERM', key, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1653,7 +1655,7 @@ class Validator
 		}
 
 		return this.setStatusReport(
-			'kUNKNOWN_TERM', key, value, theReportIndex
+			'kVALUE_NOT_TERM', key, value, theReportIndex
 		)                                                               // ==>
 
 	} // doResolveEnum()

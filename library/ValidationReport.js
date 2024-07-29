@@ -212,7 +212,7 @@ class ValidationStatus
 		"kNOT_A_DESCRIPTOR": {
 			"statusCode": 5,
 			"statusMessage": {
-				"iso_639_3_eng": "The term reference is not a descriptor."
+				"iso_639_3_eng": "The value is not a descriptor."
 			}
 		},
 		"kNOT_A_SCALAR": {
@@ -296,13 +296,13 @@ class ValidationStatus
 		"kNOT_AN_ENUM": {
 			"statusCode": 19,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided value is not an enumeration element reference."
+				"iso_639_3_eng": "The value is not an enumeration element reference."
 			}
 		},
 		"kNOT_A_STRUCTURE_DEFINITION": {
 			"statusCode": 20,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided key is not a structure definition reference."
+				"iso_639_3_eng": "The value is not a structure definition reference."
 			}
 		},
 		"kNO_REF_DEFAULT_NAMESPACE_KEY": {
@@ -357,6 +357,12 @@ class ValidationStatus
 			"statusCode": 29,
 			"statusMessage": {
 				"iso_639_3_eng": "The property is not a descriptor."
+			}
+		},
+		"kVALUE_NOT_TERM": {
+			"statusCode": 30,
+			"statusMessage": {
+				"iso_639_3_eng": "Value is not a term reference."
 			}
 		}
 	}
