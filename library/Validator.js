@@ -767,7 +767,9 @@ class Validator
 						)                                               // ==>
 
 					case module.context.configuration.typeObject:
-						return true
+						return this.doValidateObject(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 
 					case module.context.configuration.typeGeoJSON:
 						return true
@@ -905,10 +907,6 @@ class Validator
 	 * This method will validate the provided boolean value.
 	 *
 	 * The method only asserts if the value is boolean.
-	 *
-	 * Validation workflow:
-	 *
-	 * - Check if value is boolean.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1718,11 +1716,7 @@ class Validator
 	 *
 	 * This method will validate the provided struct value.
 	 *
-	 * The method only asserts if the value is boolean.
-	 *
-	 * Validation workflow:
-	 *
-	 * - Check if value is boolean.
+	 * The method only asserts if the value is an object.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1754,6 +1748,121 @@ class Validator
 		)                                                               // ==>
 
 	} // doValidateStruct()
+
+	/**
+	 * doValidateObject
+	 *
+	 * This method will validate the provided object value.
+	 *
+	 * The method only asserts if the value is boolean.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is boolean.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateObject(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Check if object.
+		///
+		const object = theContainer[theDescriptor._key]
+		if(Validator.IsObject(object))
+		{
+			///
+			// Validate object structure.
+			///
+			if(!this.doValidateObjectStructure(
+				theContainer, theDescriptor, theSection, theReportIndex)
+			){
+				return false                                            // ==>
+			}
+
+			///
+			// Validate object.
+			///
+			let status = true
+			Object.keys(object).some( (property) => {
+
+				///
+				// Resolve property.
+				///
+				const term =
+					this.cache.getTerm(
+						property, this.useCache, this.cacheMissing
+					)
+
+				///
+				// Term not found.
+				///
+				if(term === false) {
+					if(this.expectTerms) {
+						status = this.setStatusReport(
+							'kUNKNOWN_PROPERTY',
+							property,
+							object,
+							theReportIndex
+						)
+
+						return true
+					}
+
+					return false
+				}
+
+				///
+				// Assert term is a descriptor.
+				///
+				if(!Validator.IsDescriptor(term)) {
+					status = this.setStatusReport(
+						'kPROPERTY_NOT_DESCRIPTOR',
+						property,
+						object,
+						theReportIndex
+					)
+
+					return true
+				}
+
+				///
+				// Validate property/value pair.
+				///
+				if(!this.doValidateDataSection(
+					object,
+					term,
+					term[module.context.configuration.sectionData],
+					theReportIndex
+				)) {
+					status = false
+					return true
+				}
+
+				return false
+			})
+
+			return status                                                   // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_AN_OBJECT',
+			theDescriptor._key,
+			object,
+			theReportIndex
+		)                                                               // ==>
+
+	} // doValidateObject()
 
 	/**
 	 * doResolveEnum
@@ -1850,6 +1959,51 @@ class Validator
 		)                                                               // ==>
 
 	} // doResolveEnum()
+
+	/**
+	 * doValidateObjectStructure
+	 *
+	 * This method will validate the structure of the provided object.
+	 *
+	 * The method will ensure the value follows the descriptor rules.
+	 * The method will also assert that the descriptor has a rule section, and
+	 * it will apply the rule section directives.
+	 *
+	 * The method will return `true` if valid, or `false` if not.
+	 *
+	 * @param theContainer {Object}: The object container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateObjectStructure(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const object = theContainer[key]
+
+		///
+		// Check if the descriptor has a data kind.
+		///
+		if(theSection.hasOwnProperty(module.context.configuration.dataKind))
+		{
+			///
+			// Handle data kinds.
+			///
+
+		} // Descriptor has data kind.
+
+		return true                                                     // ==>
+
+	} // doValidateObjectStructure()
 
 
 	/**
