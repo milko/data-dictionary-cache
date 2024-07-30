@@ -762,7 +762,9 @@ class Validator
 						)                                               // ==>
 
 					case module.context.configuration.typeStruct:
-						return true
+						return this.doValidateStruct(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 
 					case module.context.configuration.typeObject:
 						return true
@@ -902,7 +904,7 @@ class Validator
 	 *
 	 * This method will validate the provided boolean value.
 	 *
-	 * The method only asserts the value is boolean.
+	 * The method only asserts if the value is boolean.
 	 *
 	 * Validation workflow:
 	 *
@@ -1710,6 +1712,48 @@ class Validator
 		)                                                               // ==>
 
 	} // doValidateDate()
+
+	/**
+	 * doValidateStruct
+	 *
+	 * This method will validate the provided struct value.
+	 *
+	 * The method only asserts if the value is boolean.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is boolean.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateStruct(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Check if boolean.
+		///
+		if(Validator.IsObject(theContainer[theDescriptor._key])) {
+			return true                                                 // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_AN_OBJECT',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
+
+	} // doValidateStruct()
 
 	/**
 	 * doResolveEnum
