@@ -377,6 +377,12 @@ class ValidationStatus
 			"statusMessage": {
 				"iso_639_3_eng": "Unknown property."
 			}
+		},
+		"kINVALID_DATE_FORMAT": {
+			"statusCode": 33,
+			"statusMessage": {
+				"iso_639_3_eng": "The date has an invalid format: use YYYY, YYYYMM, YYYYMMDD or YYYY-YYYY."
+			}
 		}
 	}
 

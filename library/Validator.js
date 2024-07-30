@@ -394,7 +394,7 @@ class Validator
 			///
 			// Validate.
 			///
-			if(!this.doValidateDimension(this.value, this.term, section, index)) {
+			if(!this.doValidateDataSection(this.value, this.term, section, index)) {
 				status = false
 			}
 		})
@@ -469,6 +469,13 @@ class Validator
 	 *
 	 * The method assumes you provide an object.
 	 *
+	 * Validation workflow:
+	 *
+	 * - Iterate object properties.
+	 * - Check if property matches a term.
+	 * - Check if matched term is a descriptor.
+	 * - Validate according to descriptor data section.
+	 *
 	 * The method will return true if no errors occurred, or false if at least
 	 * one error occurred.
 	 *
@@ -537,7 +544,7 @@ class Validator
 			///
 			// Validate property/value pair.
 			///
-			if(!this.doValidateDimension(
+			if(!this.doValidateDataSection(
 				theContainer,
 				term,
 				term[module.context.configuration.sectionData],
@@ -561,7 +568,7 @@ class Validator
 
 
 	/**
-	 * doValidateDimension
+	 * doValidateDataSection
 	 *
 	 * This method will validate the key/value pair constituted by the provided
 	 * descriptor and the provided value.
@@ -589,7 +596,12 @@ class Validator
 	 *                     current object, so each value can be evaluated. If
 	 *                     the value is a scalar, provide `null` here.
 	 *
-	 * The method returns a boolean: `true` means the validation was successful,
+	 * Validation workflow:
+	 *
+	 * - Handle empty data section: all is fair.
+	 * - Iterate all expected data section blocks and call related validator.
+	 * - Raise an error if none of the expected blocks were found.
+	 *
 	 * if the validation failed, the method will return `false`.
 	 *
 	 * @param theContainer {String|Number|Object|Array}: The value container.
@@ -599,12 +611,19 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` means valid, `false` means error.
 	 */
-	doValidateDimension(
+	doValidateDataSection(
 		theContainer,
 		theDescriptor,
 		theSection,
 		theReportIndex = null)
 	{
+		///
+		// Handle empty data section.
+		///
+		if(Object.keys(theSection).length === 0) {
+			return true                                                 // ==>
+		}
+
 		///
 		// Traverse data section.
 		// We know the descriptor has the data section.
@@ -646,7 +665,7 @@ class Validator
 			theReportIndex
 		)                                                               // ==>
 
-	} // doValidateDimension()
+	} // doValidateDataSection()
 
 
 	/**
@@ -659,6 +678,13 @@ class Validator
 	 *
 	 * This method will check if the value is a scalar and then attempt to
 	 * check if the value corresponds to the declared data type.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is scalar.
+	 * - Check if descriptor data section contains scalar data type.
+	 * - Parse data type and call related validator.
+	 * - Raise an error if data type is unsupported.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -729,10 +755,11 @@ class Validator
 						return this.doValidateEnum(
 							theContainer, theDescriptor, theSection, theReportIndex
 						)                                               // ==>
-						return true
 
 					case module.context.configuration.typeDate:
-						return true
+						return this.doValidateDate(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
 
 					case module.context.configuration.typeStruct:
 						return true
@@ -743,17 +770,19 @@ class Validator
 					case module.context.configuration.typeGeoJSON:
 						return true
 
+					default:
+						return this.setStatusReport(
+							'kUNSUPPORTED_DATA_TYPE',
+							theDescriptor._key,
+							theSection,
+							theReportIndex
+						)                                               // ==>
+
 				} // Parsing data type.
 
 				///
 				// Unsupported data type.
 				///
-				return this.setStatusReport(
-					'kUNSUPPORTED_DATA_TYPE',
-					theDescriptor._key,
-					theSection,
-					theReportIndex
-				)                                                       // ==>
 
 			} // Has data type.
 
@@ -875,6 +904,10 @@ class Validator
 	 *
 	 * The method only asserts the value is boolean.
 	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is boolean.
+	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
@@ -913,6 +946,10 @@ class Validator
 	 *
 	 * The method will first assert if the value is an integer.
 	 * The method will then assert the value is within valid range.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is integer.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -955,6 +992,10 @@ class Validator
 	 *
 	 * The method will first assert if the value is a number.
 	 * The method will then assert the value is within valid range.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is number.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -999,7 +1040,13 @@ class Validator
 	 * if the value is a string, the function will try to interpret it as a
 	 * date.
 	 *
-	 * If there is an range, the method will check the range.
+	 * If there is a range, the method will check the range: note that the
+	 * method expects a numeric range.
+	 *
+	 * Validation workflow:
+	 *
+	 * - If value is numeric, return check range status.
+	 * - If value is string, convert to timestamp and check range.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1079,6 +1126,12 @@ class Validator
 	 * The method will first assert if the value is a string.
 	 * The method will then assert the value is within valid range.
 	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is a string.
+	 * - Assert string respects eventual regular expression.
+	 * - Check eventual string range.
+	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
@@ -1145,6 +1198,18 @@ class Validator
 	 *           obviously, for the default namespace. Since this object is only
 	 *           concerned in validating existing objects, we forbid the use of
 	 *           this value as a term reference.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is a string.
+	 * - Assert key is not empty, or the descriptor is not the namespace.
+	 * - Assert the key is not the physical key of the default namespace.
+	 * - Assert key is a valid string.
+	 * - If data section has data kind:
+	 * - Assert data kind is an array.
+	 *   - Assert key corresponds to a term.
+	 *   - Depending on data kind, assert term is an enum, descriptor or
+	 *     structure definition.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
@@ -1342,6 +1407,15 @@ class Validator
 	 * The method will first assert if the value is a string.
 	 * Finally, the method will assert that the document documentExists.
 	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is a string.
+	 * - Assert handle is well-formed.
+	 * - Check collection name.
+	 * - Check if collection exists.
+	 * - Check key value.
+	 * - Assert document exists.
+	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
@@ -1443,6 +1517,19 @@ class Validator
 	 * The method will then check that the string corresponds to a term, if that
 	 * is the case, it will check the eventual data kinds.
 	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is a string.
+	 * - Assert string does not reference default namespace.
+	 * - Assert data section has data kind.
+	 * - Assert data kind is an array.
+	 * - Assert value references a term.
+	 * - If term was not found:
+	 *   - Try resolving term by probing codes.
+	 * - If term was found:
+	 *   - Assert term is an enumeration element.
+	 *   - Assert term belongs to enumeration type.
+	 *
 	 * The method will return `true` if enum, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
@@ -1472,11 +1559,11 @@ class Validator
 		const value = theContainer[key]
 
 		///
-		// Validate key value.
+		// Forbid direct reference to default namespace.
 		///
-		if(!TermsCache.CheckKeyValue(value)) {
+		if(value === TermsKeys.DefaultNamespaceKey()) {
 			return this.setStatusReport(
-				'kBAD_KEY_VALUE', key, value, theReportIndex
+				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1563,6 +1650,66 @@ class Validator
 		)                                                               // ==>
 
 	} // doValidateEnum()
+
+	/**
+	 * doValidateDate
+	 *
+	 * This method will validate the provided string date.
+	 *
+	 * The method will not validate the actual date, it will only ensure the
+	 * value is in the correct format.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is a string.
+	 * - Check string format.
+	 * - Check date range.
+	 *
+	 * The method will return `true` if enum, or `false` if not.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateDate(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const value = theContainer[key]
+
+		///
+		// Handle string.
+		///
+		if(Validator.IsString(value)) {
+			///
+			// Validate string format.
+			///
+			const regexp = new RegExp("^[0-9]{4}$|^[0-9]{6}$|^[0-9]{8}$|^[0-9]{4}-[0-9]{4}$")
+			if (value.match(regexp)) {
+				return this.checkDateRange(
+					theContainer, theDescriptor, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			return this.setStatusReport(
+				'kINVALID_DATE_FORMAT', key, value, theReportIndex
+			)                                                           // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_A_STRING', key, value, theReportIndex
+		)                                                               // ==>
+
+	} // doValidateDate()
 
 	/**
 	 * doResolveEnum
