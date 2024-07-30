@@ -277,6 +277,36 @@
             "required": true,
             "default": "_max-range-exclusive_string"
         },
+        "rangeDate": {
+            "description": "Date valid range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_valid-range_date"
+        },
+        "rangeDateMinInclusive": {
+            "description": "Date minimum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-inclusive_date"
+        },
+        "rangeDateMaxInclusive": {
+            "description": "Date maximum inclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-inclusive_date"
+        },
+        "rangeDateMinExclusive": {
+            "description": "Date minimum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_min-range-exclusive_date"
+        },
+        "rangeDateMaxExclusive": {
+            "description": "Date maximum exclusive range descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_max-range-exclusive_date"
+        },
         "regularExpression": {
             "description": "Regular expression descriptor key",
             "type": "string",

@@ -2048,7 +2048,8 @@ class Validator
 		///
 		if(theSection.hasOwnProperty(module.context.configuration.rangeDate))
 		{
-			const value = theContainer[theDescriptor._key]
+			const key = theDescriptor._key
+			const value = theContainer[key]
 			const range = theSection[module.context.configuration.rangeDate]
 
 			///
@@ -2060,8 +2061,8 @@ class Validator
 					if(value < range[module.context.configuration.rangeDateMinInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
+							key,
+							value,
 							theReportIndex,
 							{ "section": range }
 						)                                               // ==>
@@ -2072,8 +2073,8 @@ class Validator
 					if(value <= range[module.context.configuration.rangeDateMinExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
+							key,
+							value,
 							theReportIndex,
 							{ "section": range }
 						)                                               // ==>
@@ -2084,8 +2085,8 @@ class Validator
 					if(value > range[module.context.configuration.rangeDateMaxInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
+							key,
+							value,
 							theReportIndex,
 							{ "section": range }
 						)                                               // ==>
@@ -2096,8 +2097,8 @@ class Validator
 					if(value >= range[module.context.configuration.rangeDateMaxExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
+							key,
+							value,
 							theReportIndex,
 							{ "section": range }
 						)                                               // ==>
@@ -2110,7 +2111,7 @@ class Validator
 
 			return this.setStatusReport(
 				'kRANGE_NOT_AN_OBJECT',
-				theDescriptor._key,
+				key,
 				range,
 				theReportIndex,
 				{ "section": theSection }
