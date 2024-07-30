@@ -508,7 +508,7 @@ class Validator
 			if(term === false) {
 				if(this.expectTerms) {
 					status = this.setStatusReport(
-						'kUNKNOWN_DESCRIPTOR',
+						'kUNKNOWN_PROPERTY',
 						property,
 						theContainer,
 						theReportIndex
@@ -525,7 +525,7 @@ class Validator
 			///
 			if(!Validator.IsDescriptor(term)) {
 				status = this.setStatusReport(
-					'kDESCRIPTOR_NOT_DESCRIPTOR',
+					'kPROPERTY_NOT_DESCRIPTOR',
 					property,
 					theContainer,
 					theReportIndex
@@ -749,7 +749,7 @@ class Validator
 				// Unsupported data type.
 				///
 				return this.setStatusReport(
-					'kUNSUPPORTED',
+					'kUNSUPPORTED_DATA_TYPE',
 					theDescriptor._key,
 					theSection,
 					theReportIndex
@@ -762,9 +762,9 @@ class Validator
 			///
 			else if(this.expectType) {
 				return this.setStatusReport(
-					'kMISSING_SCALAR_DATA_TYPE',
+					'kMISSING_DATA_TYPE',
 					theDescriptor._key,
-					theContainer,
+					theSection,
 					theReportIndex
 				)                                                       // ==>
 
@@ -1299,7 +1299,7 @@ class Validator
 
 						default:
 							return this.setStatusReport(
-								'kINVALID_DATA_KIND_OPTION',
+								'kKEY_INVALID_DATA_KIND',
 								module.context.configuration.dataKind,
 								kind,
 								theReportIndex,

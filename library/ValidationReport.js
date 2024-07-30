@@ -145,22 +145,28 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kMISSING_DATA_TYPE": {
+			"statusCode": -6,
+			"statusMessage": {
+				"iso_639_3_eng": `Invalid descriptor: missing data type.`
+			}
+		},
 		"kMISSING_DATA_KIND": {
 			"statusCode": -5,
 			"statusMessage": {
 				"iso_639_3_eng": "Invalid data section: missing data kind."
 			}
 		},
-		"kINVALID_DATA_KIND_OPTION": {
+		"kKEY_INVALID_DATA_KIND": {
 			"statusCode": -4,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid data section: string key data type features an invalid option."
+				"iso_639_3_eng": `Invalid data section: key data type, ${module.context.configuration.typeKey}, features an invalid option. Expecting ${module.context.configuration.anyTerm}, ${module.context.configuration.anyEnum}, ${module.context.configuration.anyDescriptor}, or ${module.context.configuration.anyObject}.`
 			}
 		},
 		"kNOT_ARRAY_DATA_KIND": {
 			"statusCode": -3,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid data section: the data kind is not an array."
+				"iso_639_3_eng": "Invalid data section: the data kind must be an array."
 			}
 		},
 		"kRANGE_NOT_AN_OBJECT": {
@@ -182,13 +188,14 @@ class ValidationStatus
 				"iso_639_3_ita": "Operativo.",
 				"iso_639_3_fra": "Opérationnel.",
 				"iso_639_3_esp": "Operativo.",
-				"iso_639_3_deu": "Betriebsbereit."
+				"iso_639_3_deu": "Betriebsbereit.",
+				"iso_639_3_swa": "Akuna matata."
 			}
 		},
-		"kNOT_AN_OBJECT": {
+		"kMODIFIED_VALUE": {
 			"statusCode": 1,
 			"statusMessage": {
-				"iso_639_3_eng": "Expecting an object."
+				"iso_639_3_eng": "The value of at least one property was updated: check report."
 			}
 		},
 		"kNOT_AN_ARRAY": {
@@ -212,7 +219,7 @@ class ValidationStatus
 		"kNOT_A_DESCRIPTOR": {
 			"statusCode": 5,
 			"statusMessage": {
-				"iso_639_3_eng": "The value is not a descriptor."
+				"iso_639_3_eng": "The value is not a descriptor reference."
 			}
 		},
 		"kNOT_A_SCALAR": {
@@ -221,64 +228,58 @@ class ValidationStatus
 				"iso_639_3_eng": "The value is not a scalar."
 			}
 		},
-		"kMISSING_SCALAR_DATA_TYPE": {
-			"statusCode": 7,
-			"statusMessage": {
-				"iso_639_3_eng": `Invalid descriptor: missing data type.`
-			}
-		},
 		"kNOT_A_BOOLEAN": {
 			"statusCode": 8,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is not a boolean."
+				"iso_639_3_eng": "The value is not a boolean."
 			}
 		},
 		"kNOT_AN_INTEGER": {
 			"statusCode": 9,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is not an integer."
+				"iso_639_3_eng": "The value is not an integer."
 			}
 		},
 		"kNOT_A_NUMBER": {
 			"statusCode": 10,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is not a number."
+				"iso_639_3_eng": "The value is not a number."
 			}
 		},
 		"kVALUE_OUT_OF_RANGE": {
 			"statusCode": 11,
 			"statusMessage": {
-				"iso_639_3_eng": "Value out of range."
+				"iso_639_3_eng": "The value out of range."
 			}
 		},
 		"kVALUE_LOW_RANGE": {
 			"statusCode": 12,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is less than valid range."
+				"iso_639_3_eng": "The value is smaller than valid range."
 			}
 		},
 		"kVALUE_HIGH_RANGE": {
 			"statusCode": 13,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is higher than valid range."
+				"iso_639_3_eng": "The value is greater than valid range."
 			}
 		},
 		"kVALUE_NOT_A_TIMESTAMP": {
 			"statusCode": 14,
 			"statusMessage": {
-				"iso_639_3_eng": "Value cannot be interpreted as a timestamp."
+				"iso_639_3_eng": "The value cannot be interpreted as a timestamp."
 			}
 		},
-		"kUNSUPPORTED": {
+		"kUNSUPPORTED_DATA_TYPE": {
 			"statusCode": 15,
 			"statusMessage": {
-				"iso_639_3_eng": "The value does not correspond to a supported option."
+				"iso_639_3_eng": "Unsupported data type."
 			}
 		},
 		"kNOT_A_STRING": {
 			"statusCode": 16,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is not a string."
+				"iso_639_3_eng": "The value is not a string."
 			}
 		},
 		"kNO_MATCH_REGEXP": {
@@ -290,25 +291,25 @@ class ValidationStatus
 		"kEMPTY_KEY": {
 			"statusCode": 18,
 			"statusMessage": {
-				"iso_639_3_eng": "The provided key cannot be an empty string."
+				"iso_639_3_eng": "The provided document key cannot be an empty string."
 			}
 		},
 		"kNOT_AN_ENUM": {
 			"statusCode": 19,
 			"statusMessage": {
-				"iso_639_3_eng": "The value is not an enumeration element reference."
+				"iso_639_3_eng": "The referenced term is not an enumeration element."
 			}
 		},
 		"kNOT_A_STRUCTURE_DEFINITION": {
 			"statusCode": 20,
 			"statusMessage": {
-				"iso_639_3_eng": "The value is not a structure definition reference."
+				"iso_639_3_eng": "The referenced term is not a structure definition."
 			}
 		},
 		"kNO_REF_DEFAULT_NAMESPACE_KEY": {
 			"statusCode": 21,
 			"statusMessage": {
-				"iso_639_3_eng": "You cannot use this value as the key for a term: it is reserved to the default namespace: use an empty string to reference the default namespace."
+				"iso_639_3_eng": "You cannot use this value as a document key: it is reserved to the default namespace. If you want to reference the default namespace, use an empty string."
 			}
 		},
 		"kUNKNOWN_DOCUMENT": {
@@ -320,19 +321,19 @@ class ValidationStatus
 		"kBAD_KEY_VALUE": {
 			"statusCode": 23,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid value for document key."
+				"iso_639_3_eng": "Invalid document key."
 			}
 		},
 		"kBAD_HANDLE_VALUE": {
 			"statusCode": 24,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid value for document handle."
+				"iso_639_3_eng": "Invalid document handle."
 			}
 		},
 		"kBAD_COLLECTION_NAME": {
 			"statusCode": 25,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid value for collection name."
+				"iso_639_3_eng": "Invalid collection name."
 			}
 		},
 		"kUNKNOWN_COLLECTION": {
@@ -344,7 +345,7 @@ class ValidationStatus
 		"kNOT_CORRECT_ENUM_TYPE": {
 			"statusCode": 27,
 			"statusMessage": {
-				"iso_639_3_eng": "Provided enumeration is not a valid option."
+				"iso_639_3_eng": "Term does not belong to the requested enumerations."
 			}
 		},
 		"kUNKNOWN_DESCRIPTOR": {
@@ -353,7 +354,7 @@ class ValidationStatus
 				"iso_639_3_eng": "Unknown descriptor."
 			}
 		},
-		"kDESCRIPTOR_NOT_DESCRIPTOR": {
+		"kPROPERTY_NOT_DESCRIPTOR": {
 			"statusCode": 29,
 			"statusMessage": {
 				"iso_639_3_eng": "The property is not a descriptor."
@@ -362,7 +363,19 @@ class ValidationStatus
 		"kVALUE_NOT_TERM": {
 			"statusCode": 30,
 			"statusMessage": {
-				"iso_639_3_eng": "Value is not a term reference."
+				"iso_639_3_eng": "The value is not a term reference: term not found."
+			}
+		},
+		"kNOT_AN_OBJECT": {
+			"statusCode": 31,
+			"statusMessage": {
+				"iso_639_3_eng": "The value is not an object."
+			}
+		},
+		"kUNKNOWN_PROPERTY": {
+			"statusCode": 32,
+			"statusMessage": {
+				"iso_639_3_eng": "Unknown property."
 			}
 		}
 	}
