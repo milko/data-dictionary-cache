@@ -23,10 +23,9 @@ const TermsKeys = require("./TermsCache");
  * the provided value respects the constraints defined in the data dictionary
  * term that represents the value's descriptor.
  *
- * Some general rules:
- *
- * - Objects cannot be empty.
- * - The `null` value is not valid: either a property is filled or missing.
+ * Validation errors will be saved in the current object, dictionary errors will
+ * be thrown as exceptions, this means that an exception signals a corrupted
+ * data dictionary.
  */
 class Validator
 {
@@ -600,7 +599,8 @@ class Validator
 	 *
 	 * - Handle empty data section: all is fair.
 	 * - Iterate all expected data section blocks and call related validator.
-	 * - Raise an error if none of the expected blocks were found.
+	 * - Raise an error if none of the expected blocks were found and the
+	 *   `expectType` flag is set, or return true if not set.
 	 *
 	 * if the validation failed, the method will return `false`.
 	 *
@@ -658,12 +658,16 @@ class Validator
 			)                                                           // ==>
 		}
 
-		return this.setStatusReport(
-			'kEXPECTING_DATA_DIMENSION',
-			theDescriptor._key,
-			theSection,
-			theReportIndex
-		)                                                               // ==>
+		if(this.expectType) {
+			return this.setStatusReport(
+				'kRANGE_NOT_AN_OBJECT',
+				theDescriptor._key,
+				theSection,
+				theReportIndex
+			)                                                           // ==>
+		}
+
+		return true                                                     // ==>
 
 	} // doValidateDataSection()
 
@@ -783,10 +787,6 @@ class Validator
 						)                                               // ==>
 
 				} // Parsing data type.
-
-				///
-				// Unsupported data type.
-				///
 
 			} // Has data type.
 
@@ -1099,6 +1099,11 @@ class Validator
 				theContainer[theDescriptor._key] = timestamp.valueOf()
 
 				///
+				// Update status report.
+				// TODO: Replace status, in report, with kMODIFIED_VALUE.
+				///
+
+				///
 				// Check timestamp valid range.
 				///
 				return this.checkNumericRange(
@@ -1363,12 +1368,8 @@ class Validator
 							break
 
 						default:
-							return this.setStatusReport(
-								'kKEY_INVALID_DATA_KIND',
-								module.context.configuration.dataKind,
-								kind,
-								theReportIndex,
-								{ "section": theSection}
+							throw new Error(
+								`Invalid data kind option, ${kind}, in descriptor ${key}.`
 							)                                           // ==>
 
 					} // Parsed allowed values.
@@ -1385,12 +1386,8 @@ class Validator
 
 			} // Data kind is an array.
 
-			return this.setStatusReport(
-				'kNOT_ARRAY_DATA_KIND',
-				module.context.configuration.dataKind,
-				kinds,
-				theReportIndex,
-				{ "section": theSection}
+			throw new Error(
+				`Data kind must be an array, in ${key}.`
 			)                                                           // ==>
 
 		} // Has data kind.
@@ -1561,40 +1558,9 @@ class Validator
 		///
 		// Forbid direct reference to default namespace.
 		///
-		if(value === TermsKeys.DefaultNamespaceKey()) {
+		if(TermsKeys.DefaultNamespaceKey() === value) {
 			return this.setStatusReport(
 				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
-			)                                                           // ==>
-		}
-
-		///
-		// Assert data kind.
-		///
-		if(!theSection.hasOwnProperty(module.context.configuration.dataKind)) {
-			return this.setStatusReport(
-				'kMISSING_DATA_KIND',
-				key,
-				value,
-				theReportIndex,
-				{ "section": theSection}
-			)                                                           // ==>
-		}
-
-		///
-		// Save data kinds.
-		///
-		const kinds = theSection[module.context.configuration.dataKind]
-
-		///
-		// Assert data kinds.
-		///
-		if(!Validator.IsArray(kinds)) {
-			return this.setStatusReport(
-				'kNOT_ARRAY_DATA_KIND',
-				module.context.configuration.dataKind,
-				kinds,
-				theReportIndex,
-				{ "section": theSection}
 			)                                                           // ==>
 		}
 
@@ -1635,19 +1601,42 @@ class Validator
 		const paths = term[module.context.configuration.sectionPath]
 
 		///
-		// Match enumeration path with data kinds.
+		// Assert data kind.
 		///
-		if(kinds.some( (element) => paths.includes(element))) {
-			return true                                                 // ==>
-		}
+		if(theSection.hasOwnProperty(module.context.configuration.dataKind))
+		{
+			///
+			// Save data kinds.
+			///
+			const kinds = theSection[module.context.configuration.dataKind]
 
-		return this.setStatusReport(
-			'kNOT_CORRECT_ENUM_TYPE',
-			key,
-			value,
-			theReportIndex,
-			{ "section": theSection}
-		)                                                               // ==>
+			///
+			// Assert data kinds.
+			///
+			if(!Validator.IsArray(kinds)) {
+				throw new Error(
+					`The data kind must be an array, in ${key}.`
+				)                                                       // ==>
+			}
+
+			///
+			// Match enumeration path with data kinds.
+			///
+			if(kinds.some( (element) => paths.includes(element))) {
+				return true                                             // ==>
+			}
+
+			return this.setStatusReport(
+				'kNOT_CORRECT_ENUM_TYPE',
+				key,
+				value,
+				theReportIndex,
+				{ "section": theSection}
+			)                                                           // ==>
+
+		} // Has data kinds.
+
+		return true                                                     // ==>
 
 	} // doValidateEnum()
 
@@ -1864,6 +1853,12 @@ class Validator
 
 	} // doValidateObject()
 
+
+	/**
+	 * PRIVATE VALIDATION UTILITIES
+	 */
+
+
 	/**
 	 * doResolveEnum
 	 *
@@ -1998,12 +1993,284 @@ class Validator
 			///
 			// Handle data kinds.
 			///
+			const kinds = theSection[module.context.configuration.dataKind]
+			if(Validator.IsArray(kinds))
+			{
+				///
+				// Iterate data kinds.
+				///
+				let status = true
+				kinds.some( (kind) => {
+
+					///
+					// Resolve kind.
+					///
+					const term = this.cache.getTerm(
+						kind, this.useCache, this.cacheMissing
+					)
+					if(term === false) {
+						throw new Error(
+							`Invalid term reference ${kind}, was used as a data kind.`
+						)                                               // ==>
+					}
+
+					///
+					// Assert data kind has rule.
+					///
+					if(!term.hasOwnProperty(module.context.configuration.sectionRule))
+					{
+						throw new Error(
+							`Term ${term._key} is missing the required rule section.`
+						)                                               // ==>
+
+					} // Found rule.
+
+					///
+					// Assert rule section is an object.
+					///
+					if(!Validator.IsObject(term[module.context.configuration.sectionRule])) {
+						throw new Error(
+							`Term ${term._key} has an invalid rule section.`
+						)                                               // ==>
+
+					} // Rule section is object.
+
+					///
+					// Validate rule.
+					///
+					status = this.doValidateObjectRule(
+						theContainer,
+						theDescriptor,
+						theSection,
+						theReportIndex,
+						term
+					)
+				})
+
+				if(!status) {
+					return this.setStatusReport(
+						'kINVALID_OBJECT_STRUCTURE',
+						key,
+						object,
+						theReportIndex,
+						{"section": theSection}
+					)                                                   // ==>
+				}
+
+				return true                                             // ==>
+
+			} // Data kind is an array.
+
+			throw new Error(
+				`The data kind must be an array, in ${key}.`
+			)                                                           // ==>
 
 		} // Descriptor has data kind.
 
 		return true                                                     // ==>
 
 	} // doValidateObjectStructure()
+
+	/**
+	 * doValidateObjectRule
+	 *
+	 * This method will validate the structure of the provided object against
+	 * the rules section of the provided data kind.
+	 *
+	 * The method will ensure the value follows the descriptor rules.
+	 *
+	 * The method expects the rule section to be there and to be an object, it
+	 * will check if the rules section is empty.
+	 *
+	 * Note that any error triggered from this method will not set a status
+	 * report: this should be done by the caller.
+	 *
+	 * The method will return `true` if valid, or `false` if not.
+	 *
+	 * @param theContainer {Object}: The object container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 * @param theObjectType {Object}: The current data kind object.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateObjectRule(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex,
+		theObjectType)
+	{
+		///
+		// Handle empty rule section.
+		///
+		const rules = theObjectType[module.context.configuration.sectionRule]
+		if(Object.keys(rules).length > 0) {
+
+			///
+			// Handle required properties.
+			///
+			if(rules.hasOwnProperty(module.context.configuration.sectionRuleRequired)) {
+				if(!this.doValidateObjectRuleRequired(
+					theContainer, theDescriptor, theSection, theReportIndex, rules)) {
+					return false                                        // ==>
+				}
+
+			}
+
+			///
+			// Handle banned properties.
+			///
+
+			///
+			// Handle default values.
+			///
+
+		} // Rules section not empty.
+
+		return true                                                     // ==>
+
+	} // doValidateObjectRule()
+
+	/**
+	 * doValidateObjectRuleRequired
+	 *
+	 * This method will validate the structure of the provided object against
+	 * the required properties in the rules section of the current data kind.
+	 *
+	 * The method will ensure that all required properties are in the object.
+	 *
+	 * The method expects the rule section to be there and to be an object, and
+	 * to contain the required properties section.
+	 *
+	 * Note that any error triggered from this method will not set a status
+	 * report: this should be done by the caller.
+	 *
+	 * The method will return `true` if valid, or `false` if not.
+	 * The method exits on first false.
+	 *
+	 * @param theContainer {Object}: The object container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 * @param theObjectRules {Object}: The current data kind rules section.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateObjectRuleRequired(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex,
+		theObjectType)
+	{
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const object = theContainer[key]
+		const required = theObjectType[module.context.configuration.sectionRuleRequired]
+
+		///
+		// Handle required.
+		///
+		let selector = null
+		let selection = null
+		if(Object.keys(required).length > 0)
+		{
+			///
+			// Require one among set.
+			///
+			selector = module.context.configuration.selectionDescriptorsOne
+			selection = new Set(required[selector])
+			if(required.hasOwnProperty(selector)) {
+				const intersection =
+					Object.keys(object)
+						.filter(element =>
+							selection
+								.has(element))
+				if(intersection.length !== 1) {
+					return false                                        // ==>
+				}
+			}
+
+			///
+			// Require one or none among set.
+			///
+			selector = module.context.configuration.selectionDescriptorsOneNone
+			selection = new Set(required[selector])
+			if(required.hasOwnProperty(selector)) {
+				const intersection =
+					Object.keys(object)
+						.filter(element =>
+							selection
+								.has(element))
+				if(intersection.length !== 0 && intersection.length === 1) {
+					return false                                        // ==>
+				}
+			}
+
+			///
+			// Require one or more among set.
+			///
+			selector = module.context.configuration.selectionDescriptorsAny
+			selection = new Set(required[selector])
+			if(required.hasOwnProperty(selector)) {
+				const intersection =
+					Object.keys(object)
+						.filter(element =>
+							selection
+								.has(element))
+				if(intersection.length === 0) {
+					return false                                        // ==>
+				}
+			}
+
+			///
+			// Require one or none from each set.
+			///
+			selector = module.context.configuration.selectionDescriptorsAnyOne
+			if(required.hasOwnProperty(selector)) {
+				if(!Validator.IsArray(required[selector])) {
+					throw new Error(
+						`Invalid rule section in ${key}.`
+					)                                                   // ==>
+				}
+				required[selector].forEach( (choice) => {
+					const selection = new Set(choice)
+					const intersection =
+						Object.keys(object)
+							.filter(element =>
+								selection
+									.has(element))
+					if(intersection.length > 1) {
+						return false                                    // ==>
+					}
+				})
+			}
+
+			///
+			// Require all from set.
+			///
+			selector = module.context.configuration.selectionDescriptorsAll
+			selection = new Set(required[selector])
+			if(required.hasOwnProperty(selector)) {
+				const intersection =
+					Object.keys(object)
+						.filter(element =>
+							selection
+								.has(element))
+				if(intersection.length !== required[selector].length) {
+					return false                                        // ==>
+				}
+			}
+
+		} // Has required.
+
+		return true                                                     // ==>
+
+	} // doValidateObjectRuleRequired()
 
 
 	/**
@@ -2100,12 +2367,8 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			return this.setStatusReport(
-				'kRANGE_NOT_AN_OBJECT',
-				theDescriptor._key,
-				range,
-				theReportIndex,
-				{ "section": theSection }
+			throw new Error(
+				`The range section is not an object, in ${theDescriptor._key}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2203,12 +2466,8 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			return this.setStatusReport(
-				'kRANGE_NOT_AN_OBJECT',
-				theDescriptor._key,
-				range,
-				theReportIndex,
-				{ "section": theSection }
+			throw new Error(
+				`The range section is not an object, in ${theDescriptor._key}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2307,12 +2566,8 @@ class Validator
 
 			} // Correct range descriptor structure.
 
-			return this.setStatusReport(
-				'kRANGE_NOT_AN_OBJECT',
-				key,
-				range,
-				theReportIndex,
-				{ "section": theSection }
+			throw new Error(
+				`The range section is not an object, in ${theDescriptor._key}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2491,7 +2746,7 @@ class Validator
 		if(theReportIndex !== null) {
 			this.report[theReportIndex].changes = record
 		} else {
-			this.report =  record
+			this.report.changes = record
 		}
 
 	} // logResolvedValues()

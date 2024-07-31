@@ -146,33 +146,9 @@ class ValidationStatus
 	static statusRecords =
 	{
 		"kMISSING_DATA_TYPE": {
-			"statusCode": -6,
-			"statusMessage": {
-				"iso_639_3_eng": `Invalid descriptor: missing data type.`
-			}
-		},
-		"kMISSING_DATA_KIND": {
-			"statusCode": -5,
-			"statusMessage": {
-				"iso_639_3_eng": "Invalid data section: missing data kind."
-			}
-		},
-		"kKEY_INVALID_DATA_KIND": {
-			"statusCode": -4,
-			"statusMessage": {
-				"iso_639_3_eng": `Invalid data section: key data type, ${module.context.configuration.typeKey}, features an invalid option. Expecting ${module.context.configuration.anyTerm}, ${module.context.configuration.anyEnum}, ${module.context.configuration.anyDescriptor}, or ${module.context.configuration.anyObject}.`
-			}
-		},
-		"kNOT_ARRAY_DATA_KIND": {
-			"statusCode": -3,
-			"statusMessage": {
-				"iso_639_3_eng": "Invalid data section: the data kind must be an array."
-			}
-		},
-		"kRANGE_NOT_AN_OBJECT": {
 			"statusCode": -2,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid data section: the range variable is expected to be an object."
+				"iso_639_3_eng": `Invalid descriptor: missing data type.`
 			}
 		},
 		"kEXPECTING_DATA_DIMENSION": {
@@ -382,6 +358,12 @@ class ValidationStatus
 			"statusCode": 33,
 			"statusMessage": {
 				"iso_639_3_eng": "The date has an invalid format: use YYYY, YYYYMM, YYYYMMDD or YYYY-YYYY."
+			}
+		},
+		"kINVALID_OBJECT_STRUCTURE": {
+			"statusCode": 34,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid object structure."
 			}
 		}
 	}

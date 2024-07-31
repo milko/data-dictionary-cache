@@ -73,6 +73,54 @@
             "required": true,
             "default": "_rule"
         },
+        "sectionRuleRequired": {
+            "description": "Required properties rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_required"
+        },
+        "selectionDescriptorsOne": {
+            "description": "Require one property from set rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_selection-descriptors_one"
+        },
+        "selectionDescriptorsOneNone": {
+            "description": "Require one or no properties from set rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_selection-descriptors_one-none"
+        },
+        "selectionDescriptorsAny": {
+            "description": "Require any properties from set rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_selection-descriptors_any"
+        },
+        "selectionDescriptorsAnyOne": {
+            "description": "Require one or no properties from each set rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_selection-descriptors_one-none-of"
+        },
+        "selectionDescriptorsAll": {
+            "description": "Require all properties from set rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_selection-descriptors_all"
+        },
+        "sectionRuleDefault": {
+            "description": "Default values rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_default-value"
+        },
+        "sectionRuleBanned": {
+            "description": "Banned properties rules section name key",
+            "type": "string",
+            "required": true,
+            "default": "_banned"
+        },
         "sectionScalar": {
             "description": "Term scalar data definition section key",
             "type": "string",
