@@ -1622,17 +1622,23 @@ class Validator
 			///
 			// Match enumeration path with data kinds.
 			///
-			if(kinds.some( (element) => paths.includes(element))) {
-				return true                                             // ==>
-			}
+			let status = false
+			kinds.some( (item) => {
+				if(paths.includes(item)) {
+					status = true
+					return true
+				}
+			})
 
-			return this.setStatusReport(
-				'kNOT_CORRECT_ENUM_TYPE',
-				key,
-				value,
-				theReportIndex,
-				{ "section": theSection}
-			)                                                           // ==>
+			if(!status) {
+				return this.setStatusReport(
+					'kNOT_CORRECT_ENUM_TYPE',
+					key,
+					value,
+					theReportIndex,
+					{ "section": theSection}
+				)                                                       // ==>
+			}
 
 		} // Has data kinds.
 
@@ -2032,8 +2038,7 @@ class Validator
 						throw new Error(
 							`Term ${term._key} has an invalid rule section.`
 						)                                               // ==>
-
-					} // Rule section is object.
+					}
 
 					///
 					// Validate rule.
@@ -2116,12 +2121,18 @@ class Validator
 				)) {
 					return false                                        // ==>
 				}
-
 			}
 
 			///
 			// Handle banned properties.
 			///
+			if(rules.hasOwnProperty(module.context.configuration.sectionRuleBanned)) {
+				if(!this.doValidateObjectRuleBanned(
+					theContainer, theDescriptor, theSection, theReportIndex, rules
+				)) {
+					return false                                        // ==>
+				}
+			}
 
 			///
 			// Handle default values.
@@ -2163,14 +2174,14 @@ class Validator
 		theDescriptor,
 		theSection,
 		theReportIndex,
-		theObjectType)
+		theObjectRules)
 	{
 		///
 		// Init local storage.
 		///
 		const key = theDescriptor._key
 		const object = theContainer[key]
-		const required = theObjectType[module.context.configuration.sectionRuleRequired]
+		const required = theObjectRules[module.context.configuration.sectionRuleRequired]
 
 		///
 		// Handle required.
@@ -2248,6 +2259,62 @@ class Validator
 		return true                                                     // ==>
 
 	} // doValidateObjectRuleRequired()
+
+	/**
+	 * doValidateObjectRuleBanned
+	 *
+	 * This method will validate the structure of the provided object against
+	 * the required properties in the rules section of the current data kind.
+	 *
+	 * The method will ensure that all required properties are in the object.
+	 *
+	 * The method expects the rule section to be there and to be an object, and
+	 * to contain the required properties section.
+	 *
+	 * Note that any error triggered from this method will not set a status
+	 * report: this should be done by the caller.
+	 *
+	 * The method will return `true` if valid, or `false` if not.
+	 * The method exits on first false.
+	 *
+	 * @param theContainer {Object}: The object container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 * @param theObjectRules {Object}: The current data kind rules section.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateObjectRuleBanned(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex,
+		theObjectRules)
+	{
+		///
+		// Init local storage.
+		///
+		const key = theDescriptor._key
+		const object = theContainer[key]
+		const banned = theObjectRules[module.context.configuration.sectionRuleBanned]
+
+		///
+		// Handle banned.
+		///
+		const properties = Object.keys(object)
+		if(Object.keys(banned).length > 0)
+		{
+			const intersection = banned.filter(item => properties.includes(item))
+			if(intersection.length > 0) {
+				return false                                            // ==>
+			}
+
+		} // Has banned.
+
+		return true                                                     // ==>
+
+	} // doValidateObjectRuleBanned()
 
 
 	/**

@@ -321,7 +321,7 @@ class ValidationStatus
 		"kNOT_CORRECT_ENUM_TYPE": {
 			"statusCode": 27,
 			"statusMessage": {
-				"iso_639_3_eng": "Term does not belong to the requested enumerations."
+				"iso_639_3_eng": "Enumeration element does not belong to any of the required data kinds."
 			}
 		},
 		"kUNKNOWN_DESCRIPTOR": {
