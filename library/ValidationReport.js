@@ -363,7 +363,7 @@ class ValidationStatus
 		"kINVALID_OBJECT_STRUCTURE": {
 			"statusCode": 34,
 			"statusMessage": {
-				"iso_639_3_eng": "Invalid object structure."
+				"iso_639_3_eng": "Invalid object structure: data kind object structure rules failed."
 			}
 		}
 	}

@@ -1999,7 +1999,7 @@ class Validator
 				///
 				// Iterate data kinds.
 				///
-				let status = true
+				let status = false
 				kinds.some( (kind) => {
 
 					///
@@ -2038,13 +2038,12 @@ class Validator
 					///
 					// Validate rule.
 					///
-					status = this.doValidateObjectRule(
-						theContainer,
-						theDescriptor,
-						theSection,
-						theReportIndex,
-						term
-					)
+					if(this.doValidateObjectRule(
+						theContainer, theDescriptor, theSection, theReportIndex, term )
+					){
+						status = true
+						return true
+					}
 				})
 
 				if(!status) {
@@ -2113,7 +2112,8 @@ class Validator
 			///
 			if(rules.hasOwnProperty(module.context.configuration.sectionRuleRequired)) {
 				if(!this.doValidateObjectRuleRequired(
-					theContainer, theDescriptor, theSection, theReportIndex, rules)) {
+					theContainer, theDescriptor, theSection, theReportIndex, rules
+				)) {
 					return false                                        // ==>
 				}
 
@@ -2176,20 +2176,15 @@ class Validator
 		// Handle required.
 		///
 		let selector = null
-		let selection = null
+		const properties = Object.keys(object)
 		if(Object.keys(required).length > 0)
 		{
 			///
 			// Require one among set.
 			///
 			selector = module.context.configuration.selectionDescriptorsOne
-			selection = new Set(required[selector])
 			if(required.hasOwnProperty(selector)) {
-				const intersection =
-					Object.keys(object)
-						.filter(element =>
-							selection
-								.has(element))
+				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length !== 1) {
 					return false                                        // ==>
 				}
@@ -2199,13 +2194,8 @@ class Validator
 			// Require one or none among set.
 			///
 			selector = module.context.configuration.selectionDescriptorsOneNone
-			selection = new Set(required[selector])
 			if(required.hasOwnProperty(selector)) {
-				const intersection =
-					Object.keys(object)
-						.filter(element =>
-							selection
-								.has(element))
+				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length !== 0 && intersection.length === 1) {
 					return false                                        // ==>
 				}
@@ -2215,13 +2205,8 @@ class Validator
 			// Require one or more among set.
 			///
 			selector = module.context.configuration.selectionDescriptorsAny
-			selection = new Set(required[selector])
 			if(required.hasOwnProperty(selector)) {
-				const intersection =
-					Object.keys(object)
-						.filter(element =>
-							selection
-								.has(element))
+				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length === 0) {
 					return false                                        // ==>
 				}
@@ -2237,15 +2222,12 @@ class Validator
 						`Invalid rule section in ${key}.`
 					)                                                   // ==>
 				}
+				let status = true
 				required[selector].forEach( (choice) => {
-					const selection = new Set(choice)
-					const intersection =
-						Object.keys(object)
-							.filter(element =>
-								selection
-									.has(element))
+					const intersection = choice.filter(item => properties.includes(item))
 					if(intersection.length > 1) {
-						return false                                    // ==>
+						status = false
+						return true
 					}
 				})
 			}
@@ -2254,13 +2236,8 @@ class Validator
 			// Require all from set.
 			///
 			selector = module.context.configuration.selectionDescriptorsAll
-			selection = new Set(required[selector])
 			if(required.hasOwnProperty(selector)) {
-				const intersection =
-					Object.keys(object)
-						.filter(element =>
-							selection
-								.has(element))
+				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length !== required[selector].length) {
 					return false                                        // ==>
 				}
