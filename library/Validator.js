@@ -636,7 +636,7 @@ class Validator
 	 *
 	 * @param theContainer {Object}: The value container.
 	 * @param theDescriptor {Object}: The descriptor term record.
-	 * @param theSection {Object}: Data or array term section.
+	 * @param theSection {Object}: Data, array or set term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
@@ -735,6 +735,132 @@ class Validator
 
 			} // Has data type.
 
+				///
+				// Missing data type.
+			///
+			else if(this.expectType) {
+				return this.setStatusReport(
+					'kMISSING_DATA_TYPE',
+					theDescriptor._key,
+					theSection,
+					theReportIndex
+				)                                                       // ==>
+
+			} // Missing data type.
+
+			return true                                                 // ==>
+
+		} // Is a scalar.
+
+		return this.setStatusReport(
+			'kNOT_A_SCALAR',
+			theDescriptor._key,
+			theContainer[theDescriptor._key],
+			theReportIndex
+		)                                                               // ==>
+
+	} // doValidateScalar()
+
+	/**
+	 * doValidateSetScalar
+	 *
+	 * This method will check if the value is a scalar and then attempt to
+	 * check if the value corresponds to the declared data type.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if value is scalar.
+	 * - Check if descriptor set section contains set-scalar data type.
+	 * - Parse data type and call related validator.
+	 * - Raise an error if data type is unsupported.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theSection {Object}: Data, array or set term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateSetScalar(
+		theContainer,
+		theDescriptor,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Assert scalar.
+		///
+		if(!Validator.IsArray(theContainer[theDescriptor._key]))
+		{
+			///
+			// Handle type.
+			///
+			if(theSection.hasOwnProperty(module.context.configuration.sectionSetScalar))
+			{
+				///
+				// Parse data type.
+				///
+				switch(theSection[module.context.configuration.setScalarType])
+				{
+					case module.context.configuration.typeBoolean:
+						return this.doValidateBoolean(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeInteger:
+						return this.doValidateInteger(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeNumber:
+						return this.doValidateNumber(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeTypestamp:
+						return this.doValidateTimeStamp(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeString:
+						return this.doValidateString(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeKey:
+						return this.doValidateKey(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeHandle:
+						return this.doValidateHandle(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeEnum:
+						return this.doValidateEnum(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					case module.context.configuration.typeDate:
+						return this.doValidateDate(
+							theContainer, theDescriptor, theSection, theReportIndex
+						)                                               // ==>
+
+					default:
+						return this.setStatusReport(
+							'kUNSUPPORTED_DATA_TYPE',
+							theDescriptor._key,
+							theSection,
+							theReportIndex
+						)                                               // ==>
+
+				} // Parsing data type.
+
+			} // Has data type.
+
 			///
 			// Missing data type.
 			///
@@ -759,7 +885,7 @@ class Validator
 			theReportIndex
 		)                                                               // ==>
 
-	} // doValidateScalar()
+	} // doValidateSetScalar()
 
 	/**
 	 * doValidateArray

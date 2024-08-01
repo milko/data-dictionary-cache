@@ -127,6 +127,12 @@
             "required": true,
             "default": "_scalar"
         },
+        "sectionSetScalar": {
+            "description": "Term set-scalar data definition section key",
+            "type": "string",
+            "required": true,
+            "default": "_set_scalar"
+        },
         "sectionArray": {
             "description": "Term array data definition section key",
             "type": "string",
@@ -198,6 +204,12 @@
             "type": "string",
             "required": true,
             "default": "_type"
+        },
+        "setScalarType": {
+            "description": "Scalar data type descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_set_type"
         },
         "typeBoolean": {
             "description": "Boolean data type key",
