@@ -718,6 +718,9 @@ class Validator
 						)                                               // ==>
 
 					case module.context.configuration.typeGeoJSON:
+						///
+						// TODO: Looking for suitable library or inspiration.
+						///
 						return true
 
 					default:
