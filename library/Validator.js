@@ -292,6 +292,9 @@ class Validator
 	 * - Object: an object was provided without descriptor.
 	 * - Descriptor and value: both descriptor and value were provided.
 	 *
+	 * *Be aware that validation will not check the actual value of a term
+	 * global identifier, this should be done by the caller*.
+	 *
 	 * The method returns a boolean: `true` means the validation was successful,
 	 * if the validation failed, the method will return `false`.
 	 *
@@ -486,77 +489,16 @@ class Validator
 	validateObject(theContainer, theReportIndex = null)
 	{
 		///
-		// Init local storage.
-		///
-		let status = true
-
-		///
 		// Init current idle status report.
 		///
 		this.setStatusReport('kOK', '', null, theReportIndex)
 
 		///
-		// Traverse object.
+		// Validate object.
 		///
-		Object.keys(theContainer).some( (property) => {
-
-			///
-			// Resolve property.
-			///
-			const term =
-				this.cache.getTerm(
-					property, this.useCache, this.cacheMissing
-				)
-
-			///
-			// Term not found.
-			///
-			if(term === false) {
-				if(this.expectTerms) {
-					status = this.setStatusReport(
-						'kUNKNOWN_PROPERTY',
-						property,
-						theContainer,
-						theReportIndex
-					)
-
-					return true
-				}
-
-				return false
-			}
-
-			///
-			// Assert term is a descriptor.
-			///
-			if(!Validator.IsDescriptor(term)) {
-				status = this.setStatusReport(
-					'kPROPERTY_NOT_DESCRIPTOR',
-					property,
-					theContainer,
-					theReportIndex
-				)
-
-				return true
-			}
-
-			///
-			// Validate property/value pair.
-			///
-			if(!this.doValidateDataSection(
-				theContainer,
-				term,
-				term[module.context.configuration.sectionData],
-				theReportIndex
-			)) {
-				status = false
-				return true
-			}
-
-			return false
-		})
-
-		return status                                                   // ==>
+		return this.doValidateObject(
+			theContainer, null, null, theReportIndex
+		)                                                               // ==>
 
 	} // validateObject()
 
@@ -1755,11 +1697,15 @@ class Validator
 	 *
 	 * - Check if value is boolean.
 	 *
+	 * Note that this method may be called directly from the top level, so
+	 * both the descriptor and the section may be missing (null): be attentive
+	 * when setting status reports.
+	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
-	 * @param theSection {Object}: Data or array term section.
+	 * @param theDescriptor {Object|null}: The descriptor term record, or null.
+	 * @param theSection {Object|null}: Data or array term section, or null.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
@@ -1771,18 +1717,35 @@ class Validator
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const key = (theDescriptor === null)
+			? null
+			: theDescriptor._key
+		const object = (theDescriptor === null)
+			? theContainer
+			: theContainer[theDescriptor._key]
+
+		///
 		// Check if object.
 		///
-		const object = theContainer[theDescriptor._key]
 		if(Validator.IsObject(object))
 		{
 			///
 			// Validate object structure.
 			///
-			if(!this.doValidateObjectStructure(
-				theContainer, theDescriptor, theSection, theReportIndex)
-			){
-				return false                                            // ==>
+			if(theSection !== null) {
+				if(!this.doValidateObjectStructure(
+					theContainer, theDescriptor, theSection, theReportIndex)
+				){
+					return this.setStatusReport(
+						'kINVALID_OBJECT_STRUCTURE',
+						key,
+						object,
+						theReportIndex,
+						{"section": theSection}
+					)                                                   // ==>
+				}
 			}
 
 			///
@@ -1847,12 +1810,12 @@ class Validator
 				return false
 			})
 
-			return status                                                   // ==>
+			return status                                               // ==>
 		}
 
 		return this.setStatusReport(
 			'kNOT_AN_OBJECT',
-			theDescriptor._key,
+			key,
 			object,
 			theReportIndex
 		)                                                               // ==>
@@ -1970,6 +1933,15 @@ class Validator
 	 * The method will also assert that the descriptor has a rule section, and
 	 * it will apply the rule section directives.
 	 *
+	 * If the validation fails, the method will return false, however, it will
+	 * not set a status report illustrating the exact reason of the error, this
+	 * is because you may have more than one object type to conform, so it is
+	 * the caller responsibility to set the status report. Status reports on
+	 * objects are a tricky thing, since the property may take several object
+	 * structures, it would be difficult to tell if a report issued deep inside
+	 * an object refer to one or another object type, that may also require
+	 * different properties...
+	 *
 	 * The method will return `true` if valid, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The object container.
@@ -1989,7 +1961,6 @@ class Validator
 		// Init local storage.
 		///
 		const key = theDescriptor._key
-		const object = theContainer[key]
 
 		///
 		// Check if the descriptor has a data kind.
@@ -2051,17 +2022,7 @@ class Validator
 					}
 				})
 
-				if(!status) {
-					return this.setStatusReport(
-						'kINVALID_OBJECT_STRUCTURE',
-						key,
-						object,
-						theReportIndex,
-						{"section": theSection}
-					)                                                   // ==>
-				}
-
-				return true                                             // ==>
+				return status                                           // ==>
 
 			} // Data kind is an array.
 
@@ -2107,11 +2068,15 @@ class Validator
 		theObjectType)
 	{
 		///
-		// Handle empty rule section.
+		// Init local storage.
 		///
 		const rules = theObjectType[module.context.configuration.sectionRule]
-		if(Object.keys(rules).length > 0) {
 
+		///
+		// Handle empty rule section.
+		///
+		if(Object.keys(rules).length > 0)
+		{
 			///
 			// Handle required properties.
 			///
@@ -2133,10 +2098,6 @@ class Validator
 					return false                                        // ==>
 				}
 			}
-
-			///
-			// Handle default values.
-			///
 
 		} // Rules section not empty.
 
@@ -2195,6 +2156,11 @@ class Validator
 			///
 			selector = module.context.configuration.selectionDescriptorsOne
 			if(required.hasOwnProperty(selector)) {
+				if(!Validator.IsArray(required[selector])) {
+					throw new Error(
+						`Invalid rule section in ${selector}.`
+					)                                                   // ==>
+				}
 				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length !== 1) {
 					return false                                        // ==>
@@ -2206,8 +2172,13 @@ class Validator
 			///
 			selector = module.context.configuration.selectionDescriptorsOneNone
 			if(required.hasOwnProperty(selector)) {
+				if(!Validator.IsArray(required[selector])) {
+					throw new Error(
+						`Invalid rule section in ${selector}.`
+					)                                                   // ==>
+				}
 				const intersection = required[selector].filter(item => properties.includes(item))
-				if(intersection.length !== 0 && intersection.length === 1) {
+				if(!(intersection.length === 0 || intersection.length === 1)) {
 					return false                                        // ==>
 				}
 			}
@@ -2217,6 +2188,11 @@ class Validator
 			///
 			selector = module.context.configuration.selectionDescriptorsAny
 			if(required.hasOwnProperty(selector)) {
+				if(!Validator.IsArray(required[selector])) {
+					throw new Error(
+						`Invalid rule section in ${selector}.`
+					)                                                   // ==>
+				}
 				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length === 0) {
 					return false                                        // ==>
@@ -2235,6 +2211,11 @@ class Validator
 				}
 				let status = true
 				required[selector].forEach( (choice) => {
+					if(!Validator.IsArray(choice)) {
+						throw new Error(
+							`Invalid rule section in ${key}.`
+						)                                               // ==>
+					}
 					const intersection = choice.filter(item => properties.includes(item))
 					if(intersection.length > 1) {
 						status = false
@@ -2248,6 +2229,11 @@ class Validator
 			///
 			selector = module.context.configuration.selectionDescriptorsAll
 			if(required.hasOwnProperty(selector)) {
+				if(!Validator.IsArray(required[selector])) {
+					throw new Error(
+						`Invalid rule section in ${selector}.`
+					)                                                   // ==>
+				}
 				const intersection = required[selector].filter(item => properties.includes(item))
 				if(intersection.length !== required[selector].length) {
 					return false                                        // ==>

@@ -175,6 +175,12 @@
             "required": true,
             "default": "_lid"
         },
+        "globalIdentifier": {
+            "description": "Global identifier key",
+            "type": "string",
+            "required": true,
+            "default": "_gid"
+        },
         "officialIdentifiers": {
             "description": "List of official identifiers key",
             "type": "string",
