@@ -365,6 +365,24 @@ class ValidationStatus
 			"statusMessage": {
 				"iso_639_3_eng": "Invalid object structure: data kind object structure rules failed."
 			}
+		},
+		"kVALUE_NOT_AN_ARRAY": {
+			"statusCode": 35,
+			"statusMessage": {
+				"iso_639_3_eng": "Value should be an array."
+			}
+		},
+		"kARRAY_HAS_TOO_FEW_ELEMENTS": {
+			"statusCode": 36,
+			"statusMessage": {
+				"iso_639_3_eng": "Array does not have enough elements."
+			}
+		},
+		"kARRAY_HAS_TOO_MANY_ELEMENTS": {
+			"statusCode": 37,
+			"statusMessage": {
+				"iso_639_3_eng": "Array has too many elements."
+			}
 		}
 	}
 

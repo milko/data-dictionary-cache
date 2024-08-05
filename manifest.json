@@ -408,6 +408,24 @@
             "type": "string",
             "required": true,
             "default": "_any-object"
+        },
+        "arrayElements": {
+            "description": "Allowed number of elements in array",
+            "type": "string",
+            "required": true,
+            "default": "_elements"
+        },
+        "arrayMinElements": {
+            "description": "Minimum allowed number of elements",
+            "type": "string",
+            "required": true,
+            "default": "_min-items"
+        },
+        "arrayMaxElements": {
+            "description": "Maximum allowed number of elements",
+            "type": "string",
+            "required": true,
+            "default": "_max-items"
         }
     },
     "tests": "test/**/*.js"

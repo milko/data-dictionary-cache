@@ -525,9 +525,10 @@ class Validator
 	 * The method expects the following parameters:
 	 *
 	 * - `theContainer`: The container of the value.
-	 * - `theDescriptor`: The term record corresponding to the descriptor. The
-	 *                    term `_key` is the key to access the value in the
-	 *                    container.
+	 * - `theKey`: Either the global identifier of the value's descriptoror the
+	 *             index of the array element. It is the container key
+	 *             corresponding to the value. null when there is no key to the
+	 *             container.
 	 * - `theSection`: The term data section corresponding to the current
 	 *                 dimension. As we traverse nested containers, this will be
 	 *                 the data section corresponding to the current container.
@@ -547,7 +548,7 @@ class Validator
 	 * if the validation failed, the method will return `false`.
 	 *
 	 * @param theContainer {String|Number|Object|Array}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -555,7 +556,7 @@ class Validator
 	 */
 	doValidateDataSection(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex = null)
 	{
@@ -573,28 +574,28 @@ class Validator
 		if(theSection.hasOwnProperty(module.context.configuration.sectionScalar)) {
 			return this.doValidateScalar(
 				theContainer,
-				theDescriptor,
+				theKey,
 				theSection[module.context.configuration.sectionScalar],
 				theReportIndex
 			)                                                           // ==>
 		} else if(theSection.hasOwnProperty(module.context.configuration.sectionArray)) {
 			return this.doValidateArray(
 				theContainer,
-				theDescriptor,
+				theKey,
 				theSection[module.context.configuration.sectionArray],
 				theReportIndex
 			)                                                           // ==>
 		} else if(theSection.hasOwnProperty(module.context.configuration.sectionSet)) {
 			return this.doValidateSet(
 				theContainer,
-				theDescriptor,
+				theKey,
 				theSection[module.context.configuration.sectionSet],
 				theReportIndex
 			)                                                           // ==>
 		} else if(theSection.hasOwnProperty(module.context.configuration.sectionDict)) {
 			return this.doValidateDict(
 				theContainer,
-				theDescriptor,
+				theKey,
 				theSection[module.context.configuration.sectionDict],
 				theReportIndex
 			)                                                           // ==>
@@ -603,9 +604,7 @@ class Validator
 		if(this.expectType) {
 			return this.setStatusReport(
 				'kRANGE_NOT_AN_OBJECT',
-				theDescriptor._key,
-				theSection,
-				theReportIndex
+				theKey, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -635,7 +634,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data, array or set term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -643,14 +642,21 @@ class Validator
 	 */
 	doValidateScalar(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Assert scalar.
 		///
-		if(!Validator.IsArray(theContainer[theDescriptor._key]))
+		if(!Validator.IsArray(value))
 		{
 			///
 			// Handle type.
@@ -664,57 +670,57 @@ class Validator
 				{
 					case module.context.configuration.typeBoolean:
 						return this.doValidateBoolean(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeInteger:
 						return this.doValidateInteger(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeNumber:
 						return this.doValidateNumber(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeTypestamp:
 						return this.doValidateTimeStamp(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeString:
 						return this.doValidateString(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeKey:
 						return this.doValidateKey(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeHandle:
 						return this.doValidateHandle(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeEnum:
 						return this.doValidateEnum(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeDate:
 						return this.doValidateDate(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeStruct:
 						return this.doValidateStruct(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeObject:
 						return this.doValidateObject(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeGeoJSON:
@@ -726,24 +732,20 @@ class Validator
 					default:
 						return this.setStatusReport(
 							'kUNSUPPORTED_DATA_TYPE',
-							theDescriptor._key,
-							theSection,
-							theReportIndex
+							theKey, theSection, theReportIndex
 						)                                               // ==>
 
 				} // Parsing data type.
 
 			} // Has data type.
 
-				///
-				// Missing data type.
+			///
+			// Missing data type.
 			///
 			else if(this.expectType) {
 				return this.setStatusReport(
 					'kMISSING_DATA_TYPE',
-					theDescriptor._key,
-					theSection,
-					theReportIndex
+					theKey, theSection, theReportIndex
 				)                                                       // ==>
 
 			} // Missing data type.
@@ -754,9 +756,7 @@ class Validator
 
 		return this.setStatusReport(
 			'kNOT_A_SCALAR',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateScalar()
@@ -777,7 +777,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data, array or set term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -785,14 +785,21 @@ class Validator
 	 */
 	doValidateSetScalar(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Assert scalar.
 		///
-		if(!Validator.IsArray(theContainer[theDescriptor._key]))
+		if(!Validator.IsArray(value))
 		{
 			///
 			// Handle type.
@@ -806,55 +813,53 @@ class Validator
 				{
 					case module.context.configuration.typeBoolean:
 						return this.doValidateBoolean(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeInteger:
 						return this.doValidateInteger(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeNumber:
 						return this.doValidateNumber(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeTypestamp:
 						return this.doValidateTimeStamp(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeString:
 						return this.doValidateString(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeKey:
 						return this.doValidateKey(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeHandle:
 						return this.doValidateHandle(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeEnum:
 						return this.doValidateEnum(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					case module.context.configuration.typeDate:
 						return this.doValidateDate(
-							theContainer, theDescriptor, theSection, theReportIndex
+							theContainer, theKey, theSection, theReportIndex
 						)                                               // ==>
 
 					default:
 						return this.setStatusReport(
 							'kUNSUPPORTED_DATA_TYPE',
-							theDescriptor._key,
-							theSection,
-							theReportIndex
+							theKey, theSection, theReportIndex
 						)                                               // ==>
 
 				} // Parsing data type.
@@ -867,9 +872,7 @@ class Validator
 			else if(this.expectType) {
 				return this.setStatusReport(
 					'kMISSING_DATA_TYPE',
-					theDescriptor._key,
-					theSection,
-					theReportIndex
+					theKey, theSection, theReportIndex
 				)                                                       // ==>
 
 			} // Missing data type.
@@ -880,9 +883,7 @@ class Validator
 
 		return this.setStatusReport(
 			'kNOT_A_SCALAR',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateSetScalar()
@@ -896,7 +897,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -904,12 +905,49 @@ class Validator
 	 */
 	doValidateArray(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
-		return true                                                    // ==>
+		///
+		// Check if array.
+		///
+		if(Validator.IsArray(value))
+		{
+			///
+			// Assert number of elements.
+			///
+			if(!this.checkArrayElements(
+				theContainer, theKey, theSection, theReportIndex
+			)) {
+				return false                                            // ==>
+			}
+
+			///
+			// Iterate elements.
+			///
+			for(let i = 0; i < value.length; i++) {
+				if(!this.doValidateDataSection(
+					value, i, theSection, theReportIndex
+				)) {
+					return false                                        // ==>
+				}
+			}
+
+			return true                                                 // ==>
+
+		} // Is an array.
+
+		return this.setStatusReport(
+			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
+		)                                                               // ==>
 
 	} // doValidateArray()
 
@@ -923,7 +961,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -931,7 +969,7 @@ class Validator
 	 */
 	doValidateSet(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
@@ -949,7 +987,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -957,7 +995,7 @@ class Validator
 	 */
 	doValidateDict(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
@@ -982,7 +1020,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -990,22 +1028,27 @@ class Validator
 	 */
 	doValidateBoolean(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Check if boolean.
 		///
-		if(Validator.IsBoolean(theContainer[theDescriptor._key])) {
+		if(Validator.IsBoolean(value)) {
 			return true                                                 // ==>
 		}
 
 		return this.setStatusReport(
 			'kNOT_A_BOOLEAN',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateBoolean()
@@ -1025,7 +1068,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1033,25 +1076,30 @@ class Validator
 	 */
 	doValidateInteger(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Handle integer.
 		///
-		if(Validator.IsInteger(theContainer[theDescriptor._key]))
+		if(Validator.IsInteger(value))
 		{
 			return this.checkNumericRange(
-				theContainer, theDescriptor, theSection, theReportIndex
+				theContainer, theKey, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
 		return this.setStatusReport(
 			'kNOT_AN_INTEGER',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateInteger()
@@ -1071,7 +1119,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1079,25 +1127,30 @@ class Validator
 	 */
 	doValidateNumber(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Handle number.
 		///
-		if(Validator.IsNumber(theContainer[theDescriptor._key]))
+		if(Validator.IsNumber(value))
 		{
 			return this.checkNumericRange(
-				theContainer, theDescriptor, theSection, theReportIndex
+				theContainer, theKey, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
 		return this.setStatusReport(
 			'kNOT_A_NUMBER',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateNumber()
@@ -1122,7 +1175,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1130,44 +1183,52 @@ class Validator
 	 */
 	doValidateTimeStamp(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Check if UNIX timestamp.
 		///
-		if(Validator.IsNumber(theContainer[theDescriptor._key])) {
+		if(Validator.IsNumber(value)) {
 			return this.checkNumericRange(
-				theContainer, theDescriptor, theSection, theReportIndex
+				theContainer, theKey, theSection, theReportIndex
 			)                                                           // ==>
 		}
 
 		///
 		// Check if string date.
 		///
-		if(Validator.IsString(theContainer[theDescriptor._key]))
+		if(Validator.IsString(value))
 		{
 			///
 			// Convert to timestamp.
 			///
-			const timestamp = new Date(theContainer[theDescriptor._key])
+			const timestamp = new Date(value)
 			if(!isNaN(timestamp.valueOf()))
 			{
 				///
 				// Log resolved value.
 				///
 				this.logResolvedValues(
-					theDescriptor._key,
-					theContainer[theDescriptor._key],
-					timestamp.valueOf(),
-					theReportIndex
+					theKey, value, timestamp.valueOf(), theReportIndex
 				)
 
 				///
 				// Update original value.
 				///
-				theContainer[theDescriptor._key] = timestamp.valueOf()
+				if(theKey !== null) {
+					theContainer[theKey] = timestamp.valueOf()
+				} else {
+					theContainer = timestamp.valueOf()
+				}
 
 				///
 				// Update status report.
@@ -1178,7 +1239,7 @@ class Validator
 				// Check timestamp valid range.
 				///
 				return this.checkNumericRange(
-					theContainer, theDescriptor, theSection, theReportIndex
+					theContainer, theKey, theSection, theReportIndex
 				)                                                       // ==>
 
 			} // Converted to timestamp.
@@ -1187,9 +1248,7 @@ class Validator
 
 		return this.setStatusReport(
 			'kVALUE_NOT_A_TIMESTAMP',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateTimeStamp()
@@ -1211,7 +1270,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1219,25 +1278,32 @@ class Validator
 	 */
 	doValidateString(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Handle string.
 		///
-		if(Validator.IsString(theContainer[theDescriptor._key]))
+		if(Validator.IsString(value))
 		{
 			///
 			// Check regular expression.
 			///
-			if(this.checkRegexp(theContainer, theDescriptor, theSection, theReportIndex))
+			if(this.checkRegexp(theContainer, theKey, theSection, theReportIndex))
 			{
 				///
 				// Check valid range.
 				///
 				return this.checkStringRange(
-					theContainer, theDescriptor, theSection, theReportIndex
+					theContainer, theKey, theSection, theReportIndex
 				)                                                       // ==>
 			}
 
@@ -1246,9 +1312,7 @@ class Validator
 
 		return this.setStatusReport(
 			'kNOT_A_STRING',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateString()
@@ -1290,7 +1354,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1298,22 +1362,23 @@ class Validator
 	 */
 	doValidateKey(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Assert string.
 		///
-		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+		if(!this.doValidateString(theContainer, theKey, theSection, theReportIndex)) {
 			return false                                                // ==>
 		}
 
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const value = theContainer[key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Handle default namespace reference.
@@ -1324,7 +1389,7 @@ class Validator
 			// Handle dictionary term and namespace field.
 			///
 			if(this.defNamespace &&
-				key === module.context.configuration.namespaceIdentifier) {
+				theKey === module.context.configuration.namespaceIdentifier) {
 				return true                                             // ==>
 			}
 
@@ -1332,9 +1397,9 @@ class Validator
 			// Handle user term or field other than _nid.
 			///
 			if((!this.defNamespace) ||
-				(key !== module.context.configuration.namespaceIdentifier)) {
+				(theKey !== module.context.configuration.namespaceIdentifier)) {
 				return this.setStatusReport(
-					'kEMPTY_KEY', key, value, theReportIndex
+					'kEMPTY_KEY', theKey, value, theReportIndex
 				)                                                       // ==>
 			}
 
@@ -1345,7 +1410,7 @@ class Validator
 		///
 		if(value === TermsKeys.DefaultNamespaceKey()) {
 			return this.setStatusReport(
-				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
+				'kNO_REF_DEFAULT_NAMESPACE_KEY', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1354,7 +1419,7 @@ class Validator
 		///
 		if(!TermsCache.CheckKeyValue(value)) {
 			return this.setStatusReport(
-				'kBAD_KEY_VALUE', key, value, theReportIndex
+				'kBAD_KEY_VALUE', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1381,7 +1446,7 @@ class Validator
 				if(term === false)
 				{
 					return this.setStatusReport(
-						'kVALUE_NOT_TERM', key, value, theReportIndex
+						'kVALUE_NOT_TERM', theKey, value, theReportIndex
 					)                                                   // ==>
 				}
 
@@ -1405,7 +1470,7 @@ class Validator
 							}
 							statusReport = {
 								"theStatus": 'kNOT_AN_ENUM',
-								"theDescriptor": key,
+								"theDescriptor": theKey,
 								"theValue": value,
 								"theReportIndex": theReportIndex,
 								"theCustomFields": { "section": theSection }
@@ -1418,7 +1483,7 @@ class Validator
 							}
 							statusReport = {
 								"theStatus": 'kNOT_A_DESCRIPTOR',
-								"theDescriptor": key,
+								"theDescriptor": theKey,
 								"theValue": value,
 								"theReportIndex": theReportIndex,
 								"theCustomFields": { "section": theSection }
@@ -1431,7 +1496,7 @@ class Validator
 							}
 							statusReport = {
 								"theStatus": 'kNOT_A_STRUCTURE_DEFINITION',
-								"theDescriptor": key,
+								"theDescriptor": theKey,
 								"theValue": value,
 								"theReportIndex": theReportIndex,
 								"theCustomFields": { "section": theSection }
@@ -1440,7 +1505,7 @@ class Validator
 
 						default:
 							throw new Error(
-								`Invalid data kind option, ${kind}, in descriptor ${key}.`
+								`Invalid data kind option, ${kind}, in descriptor ${theKey}.`
 							)                                           // ==>
 
 					} // Parsed allowed values.
@@ -1458,7 +1523,7 @@ class Validator
 			} // Data kind is an array.
 
 			throw new Error(
-				`Data kind must be an array, in ${key}.`
+				`Data kind must be an array, in ${theKey}.`
 			)                                                           // ==>
 
 		} // Has data kind.
@@ -1487,7 +1552,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1495,22 +1560,23 @@ class Validator
 	 */
 	doValidateHandle(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Assert string.
 		///
-		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+		if(!this.doValidateString(theContainer, theKey, theSection, theReportIndex)) {
 			return false                                                // ==>
 		}
 
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const value = theContainer[key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Validate handle.
@@ -1546,31 +1612,31 @@ class Validator
 						} // Document documentExists.
 
 						return this.setStatusReport(
-							'kUNKNOWN_DOCUMENT', key, value, theReportIndex
+							'kUNKNOWN_DOCUMENT', theKey, value, theReportIndex
 						)                                               // ==>
 
 					} // Document key OK.
 
 					return this.setStatusReport(
-						'kBAD_KEY_VALUE', key, value, theReportIndex
+						'kBAD_KEY_VALUE', theKey, value, theReportIndex
 					)                                                   // ==>
 
 				} // Collection documentExists.
 
 				return this.setStatusReport(
-					'kUNKNOWN_COLLECTION', key, value, theReportIndex
+					'kUNKNOWN_COLLECTION', theKey, value, theReportIndex
 				)                                                       // ==>
 
 			} // Collection name OK.
 
 			return this.setStatusReport(
-				'kBAD_COLLECTION_NAME', key, value, theReportIndex
+				'kBAD_COLLECTION_NAME', theKey, value, theReportIndex
 			)                                                           // ==>
 
 		} // Has one slash.
 
 		return this.setStatusReport(
-			'kBAD_HANDLE_VALUE', key, value, theReportIndex
+			'kBAD_HANDLE_VALUE', theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateHandle()
@@ -1601,7 +1667,7 @@ class Validator
 	 * The method will return `true` if enum, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1609,29 +1675,30 @@ class Validator
 	 */
 	doValidateEnum(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Assert string.
 		///
-		if(!this.doValidateString(theContainer, theDescriptor, theSection, theReportIndex)) {
+		if(!this.doValidateString(theContainer, theKey, theSection, theReportIndex)) {
 			return false                                                // ==>
 		}
 
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const value = theContainer[key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Forbid direct reference to default namespace.
 		///
 		if(TermsKeys.DefaultNamespaceKey() === value) {
 			return this.setStatusReport(
-				'kNO_REF_DEFAULT_NAMESPACE_KEY', key, value, theReportIndex
+				'kNO_REF_DEFAULT_NAMESPACE_KEY', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1648,12 +1715,12 @@ class Validator
 		if(term === false) {
 			if(this.resolve) {
 				return this.doResolveEnum(
-					theContainer, theDescriptor, theSection, theReportIndex
+					theContainer, theKey, theSection, theReportIndex
 				)                                                       // ==>
 			}
 
 			return this.setStatusReport(
-				'kVALUE_NOT_TERM', key, value, theReportIndex
+				'kVALUE_NOT_TERM', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1662,7 +1729,7 @@ class Validator
 		///
 		if(!term.hasOwnProperty(module.context.configuration.sectionPath)) {
 			return this.setStatusReport(
-				'kNOT_AN_ENUM', key, value, theReportIndex
+				'kNOT_AN_ENUM', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -1704,9 +1771,7 @@ class Validator
 			if(!status) {
 				return this.setStatusReport(
 					'kNOT_CORRECT_ENUM_TYPE',
-					key,
-					value,
-					theReportIndex,
+					theKey, value, theReportIndex,
 					{ "section": theSection}
 				)                                                       // ==>
 			}
@@ -1734,7 +1799,7 @@ class Validator
 	 * The method will return `true` if enum, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1742,15 +1807,16 @@ class Validator
 	 */
 	doValidateDate(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const value = theContainer[key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Handle string.
@@ -1762,17 +1828,17 @@ class Validator
 			const regexp = new RegExp("^[0-9]{4}$|^[0-9]{6}$|^[0-9]{8}$|^[0-9]{4}-[0-9]{4}$")
 			if (value.match(regexp)) {
 				return this.checkDateRange(
-					theContainer, theDescriptor, theSection, theReportIndex
+					theContainer, theKey, theSection, theReportIndex
 				)                                                       // ==>
 			}
 
 			return this.setStatusReport(
-				'kINVALID_DATE_FORMAT', key, value, theReportIndex
+				'kINVALID_DATE_FORMAT', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
 		return this.setStatusReport(
-			'kNOT_A_STRING', key, value, theReportIndex
+			'kNOT_A_STRING', theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateDate()
@@ -1787,7 +1853,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1795,22 +1861,27 @@ class Validator
 	 */
 	doValidateStruct(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
 		// Check if boolean.
 		///
-		if(Validator.IsObject(theContainer[theDescriptor._key])) {
+		if(Validator.IsObject(value)) {
 			return true                                                 // ==>
 		}
 
 		return this.setStatusReport(
 			'kNOT_AN_OBJECT',
-			theDescriptor._key,
-			theContainer[theDescriptor._key],
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateStruct()
@@ -1833,7 +1904,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object|null}: The descriptor term record, or null.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object|null}: Data or array term section, or null.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1841,37 +1912,32 @@ class Validator
 	 */
 	doValidateObject(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Init local storage.
 		///
-		const key = (theDescriptor === null)
-			? null
-			: theDescriptor._key
-		const object = (theDescriptor === null)
-			? theContainer
-			: theContainer[theDescriptor._key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Check if object.
 		///
-		if(Validator.IsObject(object))
+		if(Validator.IsObject(value))
 		{
 			///
 			// Validate object structure.
 			///
 			if(theSection !== null) {
 				if(!this.doValidateObjectStructure(
-					theContainer, theDescriptor, theSection, theReportIndex)
+					theContainer, theKey, theSection, theReportIndex)
 				){
 					return this.setStatusReport(
 						'kINVALID_OBJECT_STRUCTURE',
-						key,
-						object,
-						theReportIndex,
+						theKey, value, theReportIndex,
 						{"section": theSection}
 					)                                                   // ==>
 				}
@@ -1881,7 +1947,7 @@ class Validator
 			// Validate object.
 			///
 			let status = true
-			Object.keys(object).some( (property) => {
+			Object.keys(value).some( (property) => {
 
 				///
 				// Resolve property.
@@ -1898,9 +1964,7 @@ class Validator
 					if(this.expectTerms) {
 						status = this.setStatusReport(
 							'kUNKNOWN_PROPERTY',
-							property,
-							object,
-							theReportIndex
+							property, value, theReportIndex
 						)
 
 						return true
@@ -1915,9 +1979,7 @@ class Validator
 				if(!Validator.IsDescriptor(term)) {
 					status = this.setStatusReport(
 						'kPROPERTY_NOT_DESCRIPTOR',
-						property,
-						object,
-						theReportIndex
+						property, value, theReportIndex
 					)
 
 					return true
@@ -1927,9 +1989,7 @@ class Validator
 				// Validate property/value pair.
 				///
 				if(!this.doValidateDataSection(
-					object,
-					term,
-					term[module.context.configuration.sectionData],
+					value, property, term[module.context.configuration.sectionData],
 					theReportIndex
 				)) {
 					status = false
@@ -1944,9 +2004,7 @@ class Validator
 
 		return this.setStatusReport(
 			'kNOT_AN_OBJECT',
-			key,
-			object,
-			theReportIndex
+			theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doValidateObject()
@@ -1985,7 +2043,7 @@ class Validator
 	 * The method will return `true` if resolved, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1993,22 +2051,23 @@ class Validator
 	 */
 	doResolveEnum(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const value = theContainer[key]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Check the resolve flag.
 		///
 		if(!this.resolve) {
 			return this.setStatusReport(
-				'kVALUE_NOT_TERM', key, value, theReportIndex
+				'kVALUE_NOT_TERM', theKey, value, theReportIndex
 			)                                                           // ==>
 		}
 
@@ -2035,20 +2094,24 @@ class Validator
 			///
 			// Replace value.
 			///
-			theContainer[theDescriptor._key] = resolved
+			if(theKey !== null) {
+				theContainer[theKey] = resolved
+			} else {
+				theContainer = resolved
+			}
 
 			///
 			// Log changes.
 			///
 			this.logResolvedValues(
-				key, value, resolved, theReportIndex
+				theKey, value, resolved, theReportIndex
 			)
 
 			return true                                                 // ==>
 		}
 
 		return this.setStatusReport(
-			'kVALUE_NOT_TERM', key, value, theReportIndex
+			'kVALUE_NOT_TERM', theKey, value, theReportIndex
 		)                                                               // ==>
 
 	} // doResolveEnum()
@@ -2074,7 +2137,7 @@ class Validator
 	 * The method will return `true` if valid, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2082,15 +2145,10 @@ class Validator
 	 */
 	doValidateObjectStructure(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
-		///
-		// Init local storage.
-		///
-		const key = theDescriptor._key
-
 		///
 		// Check if the descriptor has a data kind.
 		///
@@ -2144,7 +2202,7 @@ class Validator
 					// Validate rule.
 					///
 					if(this.doValidateObjectRule(
-						theContainer, theDescriptor, theSection, theReportIndex, term )
+						theContainer, theKey, theSection, theReportIndex, term )
 					){
 						status = true
 						return true
@@ -2156,7 +2214,7 @@ class Validator
 			} // Data kind is an array.
 
 			throw new Error(
-				`The data kind must be an array, in ${key}.`
+				`The data kind must be an array, in ${theKey}.`
 			)                                                           // ==>
 
 		} // Descriptor has data kind.
@@ -2182,7 +2240,7 @@ class Validator
 	 * The method will return `true` if valid, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectType {Object}: The current data kind object.
@@ -2191,7 +2249,7 @@ class Validator
 	 */
 	doValidateObjectRule(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex,
 		theObjectType)
@@ -2211,7 +2269,7 @@ class Validator
 			///
 			if(rules.hasOwnProperty(module.context.configuration.sectionRuleRequired)) {
 				if(!this.doValidateObjectRuleRequired(
-					theContainer, theDescriptor, theSection, theReportIndex, rules
+					theContainer, theKey, theSection, theReportIndex, rules
 				)) {
 					return false                                        // ==>
 				}
@@ -2222,7 +2280,7 @@ class Validator
 			///
 			if(rules.hasOwnProperty(module.context.configuration.sectionRuleBanned)) {
 				if(!this.doValidateObjectRuleBanned(
-					theContainer, theDescriptor, theSection, theReportIndex, rules
+					theContainer, theKey, theSection, theReportIndex, rules
 				)) {
 					return false                                        // ==>
 				}
@@ -2252,7 +2310,7 @@ class Validator
 	 * The method exits on first false.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectRules {Object}: The current data kind rules section.
@@ -2261,7 +2319,7 @@ class Validator
 	 */
 	doValidateObjectRuleRequired(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex,
 		theObjectRules)
@@ -2269,15 +2327,16 @@ class Validator
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const object = theContainer[key]
 		const required = theObjectRules[module.context.configuration.sectionRuleRequired]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Handle required.
 		///
 		let selector = null
-		const properties = Object.keys(object)
+		const properties = Object.keys(value)
 		if(Object.keys(required).length > 0)
 		{
 			///
@@ -2335,14 +2394,14 @@ class Validator
 			if(required.hasOwnProperty(selector)) {
 				if(!Validator.IsArray(required[selector])) {
 					throw new Error(
-						`Invalid rule section in ${key}.`
+						`Invalid rule section in ${theKey}.`
 					)                                                   // ==>
 				}
 				let status = true
 				required[selector].forEach( (choice) => {
 					if(!Validator.IsArray(choice)) {
 						throw new Error(
-							`Invalid rule section in ${key}.`
+							`Invalid rule section in ${theKey}.`
 						)                                               // ==>
 					}
 					const intersection = choice.filter(item => properties.includes(item))
@@ -2393,7 +2452,7 @@ class Validator
 	 * The method exits on first false.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectRules {Object}: The current data kind rules section.
@@ -2402,7 +2461,7 @@ class Validator
 	 */
 	doValidateObjectRuleBanned(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex,
 		theObjectRules)
@@ -2410,14 +2469,15 @@ class Validator
 		///
 		// Init local storage.
 		///
-		const key = theDescriptor._key
-		const object = theContainer[key]
 		const banned = theObjectRules[module.context.configuration.sectionRuleBanned]
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
 		///
 		// Handle banned.
 		///
-		const properties = Object.keys(object)
+		const properties = Object.keys(value)
 		if(Object.keys(banned).length > 0)
 		{
 			const intersection = banned.filter(item => properties.includes(item))
@@ -2449,7 +2509,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2457,7 +2517,7 @@ class Validator
 	 */
 	checkNumericRange(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
@@ -2466,8 +2526,13 @@ class Validator
 		///
 		if(theSection.hasOwnProperty(module.context.configuration.rangeNumber))
 		{
-			const value = theContainer[theDescriptor._key]
+			///
+			// Init local storage.
+			///
 			const range = theSection[module.context.configuration.rangeNumber]
+			const value = (theKey !== null)
+				? theContainer[theKey]
+				: theContainer
 
 			///
 			// Ensure range is an object.
@@ -2478,9 +2543,7 @@ class Validator
 					if(value < range[module.context.configuration.rangeNumberMinInclusive]) {
 						return this.setStatusReport(
 								'kVALUE_LOW_RANGE',
-								theDescriptor._key,
-								theContainer[theDescriptor._key],
-								theReportIndex,
+								theKey, value, theReportIndex,
 								{ "section": range }
 							)                                           // ==>
 					}
@@ -2490,9 +2553,7 @@ class Validator
 					if(value <= range[module.context.configuration.rangeNumberMinExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2502,9 +2563,7 @@ class Validator
 					if(value > range[module.context.configuration.rangeNumberMaxInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2514,9 +2573,7 @@ class Validator
 					if(value >= range[module.context.configuration.rangeNumberMaxExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2527,7 +2584,7 @@ class Validator
 			} // Correct range descriptor structure.
 
 			throw new Error(
-				`The range section is not an object, in ${theDescriptor._key}.`
+				`The range section is not an object, in ${theKey}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2548,7 +2605,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2556,7 +2613,7 @@ class Validator
 	 */
 	checkStringRange(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
@@ -2565,8 +2622,13 @@ class Validator
 		///
 		if(theSection.hasOwnProperty(module.context.configuration.rangeString))
 		{
-			const value = theContainer[theDescriptor._key]
+			///
+			// Init local storage.
+			///
 			const range = theSection[module.context.configuration.rangeString]
+			const value = (theKey !== null)
+				? theContainer[theKey]
+				: theContainer
 
 			///
 			// Ensure range is an object.
@@ -2577,11 +2639,9 @@ class Validator
 					if(value < range[module.context.configuration.rangeStringMinInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
-						)                                               // ==>
+						)                                           // ==>
 					}
 				}
 
@@ -2589,9 +2649,7 @@ class Validator
 					if(value <= range[module.context.configuration.rangeStringMinExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2601,9 +2659,7 @@ class Validator
 					if(value > range[module.context.configuration.rangeStringMaxInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2613,9 +2669,7 @@ class Validator
 					if(value >= range[module.context.configuration.rangeStringMaxExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							theDescriptor._key,
-							theContainer[theDescriptor._key],
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2626,7 +2680,7 @@ class Validator
 			} // Correct range descriptor structure.
 
 			throw new Error(
-				`The range section is not an object, in ${theDescriptor._key}.`
+				`The range section is not an object, in ${theKey}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2647,7 +2701,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2655,7 +2709,7 @@ class Validator
 	 */
 	checkDateRange(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
@@ -2664,9 +2718,13 @@ class Validator
 		///
 		if(theSection.hasOwnProperty(module.context.configuration.rangeDate))
 		{
-			const key = theDescriptor._key
-			const value = theContainer[key]
+			///
+			// Init local storage.
+			///
 			const range = theSection[module.context.configuration.rangeDate]
+			const value = (theKey !== null)
+				? theContainer[theKey]
+				: theContainer
 
 			///
 			// Ensure range is an object.
@@ -2677,11 +2735,9 @@ class Validator
 					if(value < range[module.context.configuration.rangeDateMinInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							key,
-							value,
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
-						)                                               // ==>
+						)                                           // ==>
 					}
 				}
 
@@ -2689,9 +2745,7 @@ class Validator
 					if(value <= range[module.context.configuration.rangeDateMinExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_LOW_RANGE',
-							key,
-							value,
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2701,9 +2755,7 @@ class Validator
 					if(value > range[module.context.configuration.rangeDateMaxInclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							key,
-							value,
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2713,9 +2765,7 @@ class Validator
 					if(value >= range[module.context.configuration.rangeDateMaxExclusive]) {
 						return this.setStatusReport(
 							'kVALUE_HIGH_RANGE',
-							key,
-							value,
-							theReportIndex,
+							theKey, value, theReportIndex,
 							{ "section": range }
 						)                                               // ==>
 					}
@@ -2726,7 +2776,7 @@ class Validator
 			} // Correct range descriptor structure.
 
 			throw new Error(
-				`The range section is not an object, in ${theDescriptor._key}.`
+				`The range section is not an object, in ${theKey}.`
 			)                                                           // ==>
 
 		} // Has range.
@@ -2734,6 +2784,84 @@ class Validator
 		return true                                                     // ==>
 
 	} // checkDateRange()
+
+	/**
+	 * checkArrayElements
+	 *
+	 * This method will assert if the provided array has the correct number of
+	 * elements.
+	 *
+	 * The method will first check if the section has the elements indicator, if
+	 * that is the case, it will validate the number of array elements.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	checkArrayElements(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Check if elements are checked.
+		///
+		if(theSection.hasOwnProperty(module.context.configuration.arrayElements))
+		{
+			///
+			// Check elements count.
+			///
+			const elements = theSection[module.context.configuration.arrayElements]
+			if(Validator.IsObject(elements))
+			{
+				///
+				// Init local storage.
+				///
+				const value = (theKey !== null)
+					? theContainer[theKey]
+					: theContainer
+
+				///
+				// Minimum elements.
+				///
+				if(elements.hasOwnProperty(module.context.configuration.arrayMinElements)
+					&& value.length < elements[module.context.configuration.arrayMinElements])
+				{
+					return this.setStatusReport(
+						'kARRAY_HAS_TOO_FEW_ELEMENTS',
+						theKey, value, theReportIndex,
+						{ "section": theSection }
+					)                                                   // ==>
+
+				} // Too few elements.
+
+				///
+				// Maximum elements.
+				///
+				if(elements.hasOwnProperty(module.context.configuration.arrayMaxElements)
+					&& value.length > elements[module.context.configuration.arrayMaxElements])
+				{
+					return this.setStatusReport(
+						'kARRAY_HAS_TOO_MANY_ELEMENTS',
+						theKey, value, theReportIndex,
+						{ "section": theSection }
+					)                                                   // ==>
+
+				} // Too many elements.
+
+			} // Number of elements is an object.
+
+		} // Has number of required elements.
+
+		return true                                                     // ==>
+
+	} // checkArrayElements()
 
 	/**
 	 * checkRegexp
@@ -2885,9 +3013,9 @@ class Validator
 		// Create log key.
 		///
 		if(Validator.IsObject(theOldValue)) {
-			hash = crypto.md5(theDescriptor + "\t" + JSON.stringify(theOldValue))
+			hash = crypto.md5(theDescriptor + "\t" + JSON.stringify(theNewValue))
 		} else {
-			hash = crypto.md5(theDescriptor + "\t" + theOldValue.toString())
+			hash = crypto.md5(theDescriptor + "\t" + theNewValue.toString())
 		}
 
 		///
@@ -2903,9 +3031,23 @@ class Validator
 		// Set in report.
 		///
 		if(theReportIndex !== null) {
-			this.report[theReportIndex].changes = record
+			if(this.report[theReportIndex].hasOwnProperty('changes')) {
+				this.report[theReportIndex].changes = {
+					...this.report[theReportIndex].changes,
+					...record
+				}
+			} else {
+				this.report[theReportIndex].changes = record
+			}
 		} else {
-			this.report.changes = record
+			if(this.report.hasOwnProperty('changes')) {
+				this.report.changes = {
+					...this.report.changes,
+					...record
+				}
+			} else {
+				this.report.changes = record
+			}
 		}
 
 	} // logResolvedValues()
