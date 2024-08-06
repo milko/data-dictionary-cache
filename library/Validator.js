@@ -525,7 +525,7 @@ class Validator
 	 * The method expects the following parameters:
 	 *
 	 * - `theContainer`: The container of the value.
-	 * - `theKey`: Either the global identifier of the value's descriptoror the
+	 * - `theKey`: Either the global identifier of the value's descriptor the
 	 *             index of the array element. It is the container key
 	 *             corresponding to the value. null when there is no key to the
 	 *             container.
@@ -603,7 +603,7 @@ class Validator
 
 		if(this.expectType) {
 			return this.setStatusReport(
-				'kRANGE_NOT_AN_OBJECT',
+				'kEXPECTING_DATA_DIMENSION',
 				theKey, theSection, theReportIndex
 			)                                                           // ==>
 		}
@@ -611,6 +611,90 @@ class Validator
 		return true                                                     // ==>
 
 	} // doValidateDataSection()
+
+	/**
+	 * doValidateSetSection
+	 *
+	 * This method will validate the key/value pair constituted by the provided
+	 * descriptor and the provided value. *It is assumed that the value is part
+	 * of a set*.
+	 *
+	 * The provided descriptor is expected to be a resolved descriptor term.
+	 *
+	 * The method will scan the descriptor data section resolving the eventual
+	 * container types until it reaches the scalar dimension, where it will
+	 * check the value's data type and return the status.
+	 *
+	 * The method assumes the default idle status report to be already set.
+	 *
+	 * The method expects the following parameters:
+	 *
+	 * - `theContainer`: The container of the value.
+	 * - `theKey`: Either the global identifier of the value's descriptor the
+	 *             index of the array element. It is the container key
+	 *             corresponding to the value. null when there is no key to the
+	 *             container.
+	 * - `theSection`: The term data section corresponding to the current
+	 *                 dimension. As we traverse nested containers, this will be
+	 *                 the data section corresponding to the current container.
+	 * - `theReportIndex`: The eventual index of the current report. This is
+	 *                     used when validate() was called on an array of
+	 *                     values: for each value a report is created in the
+	 *                     current object, so each value can be evaluated. If
+	 *                     the value is a scalar, provide `null` here.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Handle empty data section: all is fair.
+	 * - Iterate all expected data section blocks and call related validator.
+	 * - Raise an error if none of the expected blocks were found and the
+	 *   `expectType` flag is set, or return true if not set.
+	 *
+	 * if the validation failed, the method will return `false`.
+	 *
+	 * @param theContainer {String|Number|Object|Array}: The value container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` means valid, `false` means error.
+	 */
+	doValidateSetSection(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex = null)
+	{
+		///
+		// Handle empty data section.
+		///
+		if(Object.keys(theSection).length === 0) {
+			return true                                                 // ==>
+		}
+
+		///
+		// Traverse data section.
+		// We know the descriptor has the data section.
+		///
+		if(theSection.hasOwnProperty(module.context.configuration.sectionSetScalar)) {
+			return this.doValidateSetScalar(
+				theContainer,
+				theKey,
+				theSection[module.context.configuration.sectionSetScalar],
+				theReportIndex
+			)                                                           // ==>
+		}
+
+		if(this.expectType) {
+			return this.setStatusReport(
+				'kEXPECTING_DATA_DIMENSION',
+				theKey, theSection, theReportIndex
+			)                                                           // ==>
+		}
+
+		return true                                                     // ==>
+
+	} // doValidateSetSection()
 
 
 	/**
@@ -804,7 +888,7 @@ class Validator
 			///
 			// Handle type.
 			///
-			if(theSection.hasOwnProperty(module.context.configuration.sectionSetScalar))
+			if(theSection.hasOwnProperty(module.context.configuration.setScalarType))
 			{
 				///
 				// Parse data type.
@@ -973,8 +1057,45 @@ class Validator
 		theSection,
 		theReportIndex)
 	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
-		return true                                                    // ==>
+		///
+		// Check if array.
+		///
+		if(Validator.IsArray(value))
+		{
+			///
+			// Assert number of elements.
+			///
+			if(!this.checkArrayElements(
+				theContainer, theKey, theSection, theReportIndex
+			)) {
+				return false                                            // ==>
+			}
+
+			///
+			// Iterate elements.
+			///
+			for(let i = 0; i < value.length; i++) {
+				if(!this.doValidateSetSection(
+					value, i, theSection, theReportIndex
+				)) {
+					return false                                        // ==>
+				}
+			}
+
+			return true                                                 // ==>
+
+		} // Is an array.
+
+		return this.setStatusReport(
+			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
+		)                                                               // ==>
 
 	} // doValidateSet()
 

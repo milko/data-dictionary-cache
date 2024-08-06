@@ -145,6 +145,12 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kMISSING_SET_SCALAR": {
+			"statusCode": -3,
+			"statusMessage": {
+				"iso_639_3_eng": "Missing set scalar section in data section."
+			}
+		},
 		"kMISSING_DATA_TYPE": {
 			"statusCode": -2,
 			"statusMessage": {
