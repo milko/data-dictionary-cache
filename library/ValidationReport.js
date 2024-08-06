@@ -145,6 +145,30 @@ class ValidationStatus
 	 */
 	static statusRecords =
 	{
+		"kINVALID_DICT_VALUE_SECTION": {
+			"statusCode": -7,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid dictionary values section."
+			}
+		},
+		"kINVALID_DICT_KEY_SECTION": {
+			"statusCode": -6,
+			"statusMessage": {
+				"iso_639_3_eng": "Invalid dictionary keys section."
+			}
+		},
+		"kMISSING_DICT_VALUE_SECTION": {
+			"statusCode": -5,
+			"statusMessage": {
+				"iso_639_3_eng": "Missing dictionary values section."
+			}
+		},
+		"kMISSING_DICT_KEY_SECTION": {
+			"statusCode": -4,
+			"statusMessage": {
+				"iso_639_3_eng": "Missing dictionary keys section."
+			}
+		},
 		"kMISSING_SET_SCALAR": {
 			"statusCode": -3,
 			"statusMessage": {

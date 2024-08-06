@@ -151,6 +151,18 @@
             "required": true,
             "default": "_dict"
         },
+        "sectionDictKey": {
+            "description": "Dictionary keys data definition section key",
+            "type": "string",
+            "required": true,
+            "default": "_dict_key"
+        },
+        "sectionDictValue": {
+            "description": "Dictionary values data definition section key",
+            "type": "string",
+            "required": true,
+            "default": "_dict_value"
+        },
         "sectionPath": {
             "description": "Term edge path section key",
             "type": "string",
@@ -210,6 +222,12 @@
             "type": "string",
             "required": true,
             "default": "_set_type"
+        },
+        "keyScalarType": {
+            "description": "Scalar dictionary key type descriptor key",
+            "type": "string",
+            "required": true,
+            "default": "_type_key"
         },
         "typeBoolean": {
             "description": "Boolean data type key",

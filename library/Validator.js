@@ -950,8 +950,8 @@ class Validator
 
 			} // Has data type.
 
-			///
-			// Missing data type.
+				///
+				// Missing data type.
 			///
 			else if(this.expectType) {
 				return this.setStatusReport(
@@ -971,6 +971,123 @@ class Validator
 		)                                                               // ==>
 
 	} // doValidateSetScalar()
+
+	/**
+	 * doValidateKeyScalar
+	 *
+	 * This method will check if the value corresponds to the declared data
+	 * type.
+	 *
+	 * The method is called for object keys, so we know by default that the
+	 * value is a scalar.
+	 *
+	 * The method expects the following conditions:
+	 * - The value is an object.
+	 * - Dictionary key section exists.
+	 * - Dictionary key section is an object.
+	 * - Dictionary key section is not empty.
+	 * - Dictionary key section has data type.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Check if descriptor set section contains key-scalar data type.
+	 * - Parse data type and call related validator.
+	 * - Raise an error if data type is unsupported.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Dictionary key section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateKeyScalar(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+		const keys = Object.keys(value)
+
+		///
+		// Parse data type.
+		// TODO now: The validation cycle is working on the object property names,
+		//           this means that in the event of resolved values, we need to
+		//           reconstitute the object. Need to find a strategy.
+		//           Currently the validation fails, because we are not passing
+		//           the correct parameters.
+		///
+		switch(theSection[module.context.configuration.keyScalarType])
+		{
+			case module.context.configuration.typeString:
+				for(let i = 0; i < keys.length; i++) {
+					if(!this.doValidateString(
+						theContainer, theKey, theSection, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+				}
+				break
+
+			case module.context.configuration.typeKey:
+				for(let i = 0; i < keys.length; i++) {
+					if(!this.doValidateKey(
+						theContainer, theKey, theSection, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+				}
+				break
+
+			case module.context.configuration.typeHandle:
+				for(let i = 0; i < keys.length; i++) {
+					if(!this.doValidateHandle(
+						theContainer, theKey, theSection, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+				}
+				break
+
+			case module.context.configuration.typeEnum:
+				for(let i = 0; i < keys.length; i++) {
+					if(!this.doValidateEnum(
+						theContainer, theKey, theSection, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+				}
+				break
+
+			case module.context.configuration.typeDate:
+				for(let i = 0; i < keys.length; i++) {
+					if(!this.doValidateDate(
+						theContainer, theKey, theSection, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+				}
+				break
+
+			default:
+				return this.setStatusReport(
+					'kUNSUPPORTED_DATA_TYPE',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+
+		} // Parsing data type.
+
+		return true                                                     // ==>
+
+	} // doValidateKeyScalar()
 
 	/**
 	 * doValidateArray
@@ -1120,8 +1237,74 @@ class Validator
 		theSection,
 		theReportIndex)
 	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
 
-		return true                                                    // ==>
+		///
+		// Assert value is an object.
+		///
+		if(Validator.IsObject(value))
+		{
+			///
+			// Assert dictionary key section exists.
+			///
+			if(!theSection.hasOwnProperty(module.context.configuration.sectionDictKey)) {
+				return this.setStatusReport(
+					'kMISSING_DICT_KEY_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Assert section is an object.
+			///
+			if(!Validator.IsObject(theSection[module.context.configuration.sectionDictKey]))
+			{
+				return this.setStatusReport(
+					'kINVALID_DICT_KEY_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Handle keys section.
+			///
+			if(Object.keys(theSection[module.context.configuration.sectionDictKey]).length !== 0)
+			{
+				///
+				// Check if section has type.
+				///
+				const section = theSection[module.context.configuration.sectionDictKey]
+				if(section.hasOwnProperty(module.context.configuration.keyScalarType))
+				{
+					if(!this.doValidateKeyScalar(
+						theContainer, theKey, section, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+
+				} // Section has key type.
+
+				return this.setStatusReport(
+					'kINVALID_DICT_KEY_SECTION',
+					theKey, section, theReportIndex
+				)                                                       // ==>
+
+			} // Section is not empty.
+
+
+
+			return true                                                 // ==>
+
+		} // Value is an object.
+
+		return this.setStatusReport(
+			'kNOT_AN_OBJECT', theKey, value, theReportIndex
+		)                                                               // ==>
 
 	} // doValidateDict()
 
