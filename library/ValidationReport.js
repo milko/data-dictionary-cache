@@ -413,6 +413,24 @@ class ValidationStatus
 			"statusMessage": {
 				"iso_639_3_eng": "Array has too many elements."
 			}
+		},
+		"kGEOJSON_MISSING_TYPE": {
+			"statusCode": 38,
+			"statusMessage": {
+				"iso_639_3_eng": "GeoJSON object is missing its 'type' property."
+			}
+		},
+		"kGEOJSON_MISSING_COORDINATES": {
+			"statusCode": 39,
+			"statusMessage": {
+				"iso_639_3_eng": "GeoJSON object is missing its 'coordinates' property."
+			}
+		},
+		"kGEOJSON_INVALID_COORDINATES": {
+			"statusCode": 40,
+			"statusMessage": {
+				"iso_639_3_eng": "GeoJSON 'coordinates' property should be an array."
+			}
 		}
 	}
 

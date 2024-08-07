@@ -811,7 +811,9 @@ class Validator
 						///
 						// TODO: Looking for suitable library or inspiration.
 						///
-						return true
+						return this.doValidateGeoJSON(
+							theContainer, theKey, theSection, theReportIndex
+						)                                               // ==>
 
 					default:
 						return this.setStatusReport(
@@ -854,7 +856,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -918,7 +920,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -988,7 +990,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data, array or set term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1482,7 +1484,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1530,7 +1532,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1581,7 +1583,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1637,7 +1639,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1732,7 +1734,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1816,7 +1818,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2014,7 +2016,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2129,7 +2131,7 @@ class Validator
 	 * The method will return `true` if enum, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2261,7 +2263,7 @@ class Validator
 	 * The method will return `true` if enum, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2315,7 +2317,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2357,7 +2359,9 @@ class Validator
 	 *
 	 * Validation workflow:
 	 *
-	 * - Check if value is boolean.
+	 * - Assert value is an object.
+	 * - Validate object rules.
+	 * - Validate object keys/values.
 	 *
 	 * Note that this method may be called directly from the top level, so
 	 * both the descriptor and the section may be missing (null): be attentive
@@ -2366,7 +2370,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object|null}: Data or array term section, or null.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2471,6 +2475,98 @@ class Validator
 
 	} // doValidateObject()
 
+	/**
+	 * doValidateGeoJSON
+	 *
+	 * This method will validate the provided GeoJSON object value.
+	 *
+	 * TODO: Need to find a suitable library for checking GeoJSON objects.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Assert value is an object.
+	 * - Assert value has "type" property.
+	 * - Assert value has "coordinates" property.
+	 * - Assert the "coordinates" property is an array.
+	 *
+	 * Note that the value will correspond to the "geometry" property, but
+	 * may have another name.
+	 *
+	 * Note that this method may be called directly from the top level, so
+	 * both the descriptor and the section may be missing (null): be attentive
+	 * when setting status reports.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
+	 * @param theSection {Object|null}: Data or array term section, or null.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateGeoJSON(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
+		// Check if object.
+		///
+		if(Validator.IsObject(value))
+		{
+			///
+			// Assert object has type property.
+			///
+			if(!value.hasOwnProperty('type')) {
+				return this.setStatusReport(
+					'kGEOJSON_MISSING_TYPE',
+					theKey, value, theReportIndex,
+					{ "section": theSection }
+				)                                                       // ==>
+			}
+
+			///
+			// Assert object has coordinates property.
+			///
+			if(!value.hasOwnProperty('coordinates')) {
+				return this.setStatusReport(
+					'kGEOJSON_MISSING_COORDINATES',
+					theKey, value, theReportIndex,
+					{ "section": theSection }
+				)                                                       // ==>
+			}
+
+			///
+			// Assert coordinates is an array.
+			///
+			if(!Validator.IsArray(value['coordinates'])) {
+				return this.setStatusReport(
+					'kGEOJSON_INVALID_COORDINATES',
+					theKey, value, theReportIndex,
+					{ "section": theSection }
+				)                                                       // ==>
+			}
+
+			return true                                                 // ==>
+		}
+
+		return this.setStatusReport(
+			'kNOT_AN_OBJECT',
+			theKey, value, theReportIndex,
+			{ "section": theSection }
+		)                                                               // ==>
+
+	} // doValidateGeoJSON()
+
 
 	/**
 	 * PRIVATE VALIDATION UTILITIES
@@ -2505,7 +2601,7 @@ class Validator
 	 * The method will return `true` if resolved, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2599,7 +2695,7 @@ class Validator
 	 * The method will return `true` if valid, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -2702,7 +2798,7 @@ class Validator
 	 * The method will return `true` if valid, or `false` if not.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectType {Object}: The current data kind object.
@@ -2772,7 +2868,7 @@ class Validator
 	 * The method exits on first false.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectRules {Object}: The current data kind rules section.
@@ -2914,7 +3010,7 @@ class Validator
 	 * The method exits on first false.
 	 *
 	 * @param theContainer {Object}: The object container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 * @param theObjectRules {Object}: The current data kind rules section.
@@ -3337,7 +3433,7 @@ class Validator
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theDescriptor {Object}: The descriptor term record.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
 	 * @param theSection {Object}: Data or array term section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -3345,10 +3441,17 @@ class Validator
 	 */
 	checkRegexp(
 		theContainer,
-		theDescriptor,
+		theKey,
 		theSection,
 		theReportIndex)
 	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
 		///
 		// Check regular expression.
 		///
@@ -3363,11 +3466,11 @@ class Validator
 			//
 			// Match value.
 			//
-			if(!theContainer[theDescriptor._key].match(regexp)) {
+			if(!value.match(regexp)) {
 				return this.setStatusReport(
 					'kNO_MATCH_REGEXP',
-					theDescriptor._key,
-					theContainer[theDescriptor._key],
+					theKey,
+					theContainer,
 					theReportIndex,
 					{ "regexp": regexpstr }
 				)                                                       // ==>
