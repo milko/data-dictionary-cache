@@ -975,11 +975,8 @@ class Validator
 	/**
 	 * doValidateKeyScalar
 	 *
-	 * This method will check if the value corresponds to the declared data
-	 * type.
-	 *
-	 * The method is called for object keys, so we know by default that the
-	 * value is a scalar.
+	 * This method will check if the dictionary key value corresponds to the
+	 * dictionary key data definition.
 	 *
 	 * The method expects the following conditions:
 	 * - The value is an object.
@@ -990,14 +987,15 @@ class Validator
 	 *
 	 * Validation workflow:
 	 *
-	 * - Check if descriptor set section contains key-scalar data type.
-	 * - Parse data type and call related validator.
+	 * - Parse data type.
+	 * - Iterate all keys applying data type validation.
 	 * - Raise an error if data type is unsupported.
+	 * - If there were any resolved values, update the original object.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
-	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theContainer {Object}: The list of dictionary keys.
+	 * @param theKey {Number|null}: The keys array index.
 	 * @param theSection {Object}: Dictionary key section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
@@ -1012,67 +1010,114 @@ class Validator
 		///
 		// Init local storage.
 		///
+		let changed = false
 		const value = (theKey !== null)
 			? theContainer[theKey]
 			: theContainer
 		const keys = Object.keys(value)
+		const changes = Object.fromEntries(keys.map(key => [key, key]))
 
 		///
 		// Parse data type.
-		// TODO now: The validation cycle is working on the object property names,
-		//           this means that in the event of resolved values, we need to
-		//           reconstitute the object. Need to find a strategy.
-		//           Currently the validation fails, because we are not passing
-		//           the correct parameters.
 		///
 		switch(theSection[module.context.configuration.keyScalarType])
 		{
+			///
+			// String.
+			///
 			case module.context.configuration.typeString:
-				for(let i = 0; i < keys.length; i++) {
+				for(let i = 0; i < keys.length; i++)
+				{
+					const key = keys[i]
 					if(!this.doValidateString(
-						theContainer, theKey, theSection, theReportIndex
+						keys, i, theSection, theReportIndex
 					)) {
 						return false                                    // ==>
+					}
+
+					changes[key] = keys[i]
+					if(key !== keys[i]) {
+						changed = true
 					}
 				}
 				break
 
+			///
+			// Document key.
+			///
 			case module.context.configuration.typeKey:
-				for(let i = 0; i < keys.length; i++) {
+				for(let i = 0; i < keys.length; i++)
+				{
+					const key = keys[i]
 					if(!this.doValidateKey(
-						theContainer, theKey, theSection, theReportIndex
+						keys, i, theSection, theReportIndex
 					)) {
 						return false                                    // ==>
+					}
+
+					changes[key] = keys[i]
+					if(key !== keys[i]) {
+						changed = true
 					}
 				}
 				break
 
+			///
+			// Document handle.
+			///
 			case module.context.configuration.typeHandle:
-				for(let i = 0; i < keys.length; i++) {
+				for(let i = 0; i < keys.length; i++)
+				{
+					const key = keys[i]
 					if(!this.doValidateHandle(
-						theContainer, theKey, theSection, theReportIndex
+						keys, i, theSection, theReportIndex
 					)) {
 						return false                                    // ==>
+					}
+
+					changes[key] = keys[i]
+					if(key !== keys[i]) {
+						changed = true
 					}
 				}
 				break
 
+			///
+			// Enumeration.
+			///
 			case module.context.configuration.typeEnum:
-				for(let i = 0; i < keys.length; i++) {
+				for(let i = 0; i < keys.length; i++)
+				{
+					const key = keys[i]
 					if(!this.doValidateEnum(
-						theContainer, theKey, theSection, theReportIndex
+						keys, i, theSection, theReportIndex
 					)) {
 						return false                                    // ==>
+					}
+
+					changes[key] = keys[i]
+					if(key !== keys[i]) {
+						changed = true
 					}
 				}
 				break
 
+			///
+			// Date.
+			///
 			case module.context.configuration.typeDate:
-				for(let i = 0; i < keys.length; i++) {
+				for(let i = 0; i < keys.length; i++)
+				{
+					const key = keys[i]
 					if(!this.doValidateDate(
-						theContainer, theKey, theSection, theReportIndex
+						keys, i, theSection, theReportIndex
 					)) {
 						return false                                    // ==>
+					}
+
+					changes[key] = keys[i]
+					if(key !== keys[i]) {
+						changed = true
 					}
 				}
 				break
@@ -1084,6 +1129,22 @@ class Validator
 				)                                                       // ==>
 
 		} // Parsing data type.
+
+		///
+		// Reconcile resolved keys.
+		///
+		if(changed) {
+			const resolved = {}
+			Object.keys(changes).forEach(key => {
+				resolved[changes[key]] = value[key]
+			})
+
+			if(theKey !== null) {
+				theContainer[theKey] = resolved
+			} else {
+				theContainer = resolved
+			}
+		}
 
 		return true                                                     // ==>
 
@@ -1287,15 +1348,19 @@ class Validator
 						return false                                    // ==>
 					}
 
-				} // Section has key type.
-
-				return this.setStatusReport(
-					'kINVALID_DICT_KEY_SECTION',
-					theKey, section, theReportIndex
-				)                                                       // ==>
+				} else {
+					return this.setStatusReport(
+						'kINVALID_DICT_KEY_SECTION',
+						theKey, section, theReportIndex
+					)                                                   // ==>
+				}
 
 			} // Section is not empty.
 
+
+			///
+			// TODO: Validate dictionary values.
+			///
 
 
 			return true                                                 // ==>
