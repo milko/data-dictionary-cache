@@ -3,7 +3,7 @@
 /**
  * ValidationReport.js
  *
- * This file contains the ValidationReportand ValidationStatus class
+ * This file contains the ValidationReport and ValidationStatus class
  * definitions.
  */
 

@@ -21,8 +21,6 @@ const {db, aql} = require('@arangodb')
 const terms_view_object = db._view(module.context.configuration.viewTerm)
 const collection_terms = db._collection(module.context.configuration.collectionTerm)
 const collection_edges = db._collection(module.context.configuration.collectionEdge)
-const collection_links = db._collection(module.context.configuration.collectionLink)
-const collection_topos = db._collection(module.context.configuration.collectionTopo)
 const view_terms = {
     isArangoCollection: true,
     name: () => terms_view_object.name()

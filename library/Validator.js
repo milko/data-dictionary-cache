@@ -11,7 +11,6 @@ const _ = require('lodash')
 const crypto = require('@arangodb/crypto')
 const TermsCache = require('./TermsCache')
 const ValidationReport = require('./ValidationReport')
-const TermsKeys = require("./TermsCache");
 
 /**
  * Validator
@@ -376,6 +375,7 @@ class Validator
 		// Init local storage.
 		///
 		let status = true
+		const key = this.term._key
 		const section = this.term[module.context.configuration.sectionData]
 
 		///
@@ -391,12 +391,13 @@ class Validator
 			///
 			// Init idle status report.
 			///
-			this.setStatusReport('kOK', this.term_key, null, index)
+			this.setStatusReport('kOK', key, null, index)
 
 			///
 			// Validate.
 			///
-			if(!this.doValidateDataSection(this.value, this.term, section, index)) {
+			const container = { [key]: this.value[index] }
+			if(!this.doValidateDataSection(container, key, section, index)) {
 				status = false
 			}
 		})
@@ -1872,7 +1873,7 @@ class Validator
 		///
 		// Forbid direct reference to default namespace.
 		///
-		if(value === TermsKeys.DefaultNamespaceKey()) {
+		if(value === TermsCache.DefaultNamespaceKey()) {
 			return this.setStatusReport(
 				'kNO_REF_DEFAULT_NAMESPACE_KEY', theKey, value, theReportIndex
 			)                                                           // ==>
@@ -2160,7 +2161,7 @@ class Validator
 		///
 		// Forbid direct reference to default namespace.
 		///
-		if(TermsKeys.DefaultNamespaceKey() === value) {
+		if(TermsCache.DefaultNamespaceKey() === value) {
 			return this.setStatusReport(
 				'kNO_REF_DEFAULT_NAMESPACE_KEY', theKey, value, theReportIndex
 			)                                                           // ==>
@@ -2722,8 +2723,8 @@ class Validator
 				// Iterate data kinds.
 				///
 				let status = false
-				kinds.some( (kind) => {
-
+				kinds.some( (kind) =>
+				{
 					///
 					// Resolve kind.
 					///
@@ -3470,7 +3471,7 @@ class Validator
 				return this.setStatusReport(
 					'kNO_MATCH_REGEXP',
 					theKey,
-					theContainer,
+					value,
 					theReportIndex,
 					{ "regexp": regexpstr }
 				)                                                       // ==>
