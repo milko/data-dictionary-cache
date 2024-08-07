@@ -677,7 +677,7 @@ class Validator
 		// We know the descriptor has the data section.
 		///
 		if(theSection.hasOwnProperty(module.context.configuration.sectionSetScalar)) {
-			return this.doValidateSetScalar(
+			return this.doValidateSetElement(
 				theContainer,
 				theKey,
 				theSection[module.context.configuration.sectionSetScalar],
@@ -846,7 +846,134 @@ class Validator
 	} // doValidateScalar()
 
 	/**
-	 * doValidateSetScalar
+	 * doValidateArray
+	 *
+	 * This method will check if the value is an array, and then it will
+	 * traverse the data definition until it finds a scalar type.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateArray(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
+		// Check if array.
+		///
+		if(Validator.IsArray(value))
+		{
+			///
+			// Assert number of elements.
+			///
+			if(!this.checkArrayElements(
+				theContainer, theKey, theSection, theReportIndex
+			)) {
+				return false                                            // ==>
+			}
+
+			///
+			// Iterate elements.
+			///
+			for(let i = 0; i < value.length; i++) {
+				if(!this.doValidateDataSection(
+					value, i, theSection, theReportIndex
+				)) {
+					return false                                        // ==>
+				}
+			}
+
+			return true                                                 // ==>
+
+		} // Is an array.
+
+		return this.setStatusReport(
+			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
+		)                                                               // ==>
+
+	} // doValidateArray()
+
+	/**
+	 * doValidateSet
+	 *
+	 * This method will check if the value is an array of unique values, and
+	 * then it will pass the value to a method that will validate the scalar
+	 * element value type.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theKey {Object|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateSet(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
+		// Check if array.
+		///
+		if(Validator.IsArray(value))
+		{
+			///
+			// Assert number of elements.
+			///
+			if(!this.checkArrayElements(
+				theContainer, theKey, theSection, theReportIndex
+			)) {
+				return false                                            // ==>
+			}
+
+			///
+			// Iterate elements.
+			///
+			for(let i = 0; i < value.length; i++) {
+				if(!this.doValidateSetSection(
+					value, i, theSection, theReportIndex
+				)) {
+					return false                                        // ==>
+				}
+			}
+
+			return true                                                 // ==>
+
+		} // Is an array.
+
+		return this.setStatusReport(
+			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
+		)                                                               // ==>
+
+	} // doValidateSet()
+
+	/**
+	 * doValidateSetElement
 	 *
 	 * This method will check if the value is a scalar and then attempt to
 	 * check if the value corresponds to the declared data type.
@@ -867,7 +994,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateSetScalar(
+	doValidateSetElement(
 		theContainer,
 		theKey,
 		theSection,
@@ -970,10 +1097,139 @@ class Validator
 			theKey, value, theReportIndex
 		)                                                               // ==>
 
-	} // doValidateSetScalar()
+	} // doValidateSetElement()
 
 	/**
-	 * doValidateKeyScalar
+	 * validateDict
+	 *
+	 * This method will check if the value is an object, and then it will pass
+	 * the keys and values to the dictionary validation method.
+	 *
+	 * The method will return `true` if there were no errors, or `false`.
+	 *
+	 * @param theContainer {Object}: The value container.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Data or array term section.
+	 * @param theReportIndex {Number}: Container key for value, defaults to null.
+	 *
+	 * @return {Boolean}: `true` if valid, `false` if not.
+	 */
+	doValidateDict(
+		theContainer,
+		theKey,
+		theSection,
+		theReportIndex)
+	{
+		///
+		// Init local storage.
+		///
+		const value = (theKey !== null)
+			? theContainer[theKey]
+			: theContainer
+
+		///
+		// Assert value is an object.
+		///
+		if(Validator.IsObject(value))
+		{
+			///
+			// Assert dictionary key section exists.
+			///
+			if(!theSection.hasOwnProperty(module.context.configuration.sectionDictKey)) {
+				return this.setStatusReport(
+					'kMISSING_DICT_KEY_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Assert dictionary key section is an object.
+			///
+			if(!Validator.IsObject(theSection[module.context.configuration.sectionDictKey]))
+			{
+				return this.setStatusReport(
+					'kINVALID_DICT_KEY_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Handle keys section.
+			///
+			if(Object.keys(theSection[module.context.configuration.sectionDictKey]).length !== 0)
+			{
+				///
+				// Check if section has type.
+				///
+				const section = theSection[module.context.configuration.sectionDictKey]
+				if(section.hasOwnProperty(module.context.configuration.keyScalarType))
+				{
+					if(!this.doValidateDictKeys(
+						theContainer, theKey, section, theReportIndex
+					)) {
+						return false                                    // ==>
+					}
+
+				} else {
+					return this.setStatusReport(
+						'kINVALID_DICT_KEY_SECTION',
+						theKey, section, theReportIndex
+					)                                                   // ==>
+				}
+
+			} // Section is not empty.
+
+			///
+			// Assert dictionary value section exists.
+			///
+			if(!theSection.hasOwnProperty(module.context.configuration.sectionDictValue)) {
+				return this.setStatusReport(
+					'kMISSING_DICT_VALUE_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Assert dictionary value section is an object.
+			///
+			if(!Validator.IsObject(theSection[module.context.configuration.sectionDictValue]))
+			{
+				return this.setStatusReport(
+					'kINVALID_DICT_VALUE_SECTION',
+					theKey, theSection, theReportIndex
+				)                                                       // ==>
+			}
+
+			///
+			// Handle values section.
+			///
+			if(Object.keys(theSection[module.context.configuration.sectionDictValue]).length !== 0)
+			{
+				///
+				// Check if section has type.
+				///
+				if(!this.doValidateDictValues(
+					theContainer, theKey,
+					theSection[module.context.configuration.sectionDictValue],
+					theReportIndex
+				)) {
+					return false                                        // ==>
+				}
+
+			} // Section is not empty.
+
+			return true                                                 // ==>
+
+		} // Value is an object.
+
+		return this.setStatusReport(
+			'kNOT_AN_OBJECT', theKey, value, theReportIndex
+		)                                                               // ==>
+
+	} // doValidateDict()
+
+	/**
+	 * doValidateDictKeys
 	 *
 	 * This method will check if the dictionary key value corresponds to the
 	 * dictionary key data definition.
@@ -1001,7 +1257,7 @@ class Validator
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateKeyScalar(
+	doValidateDictKeys(
 		theContainer,
 		theKey,
 		theSection,
@@ -1148,24 +1404,37 @@ class Validator
 
 		return true                                                     // ==>
 
-	} // doValidateKeyScalar()
+	} // doValidateDictKeys()
 
 	/**
-	 * doValidateArray
+	 * doValidateDictValues
 	 *
-	 * This method will check if the value is an array, and then it will
-	 * traverse the data definition until it finds a scalar type.
+	 * This method will check if the dictionary values corresponds to the
+	 * dictionary values data definition.
+	 *
+	 * The method expects the following conditions:
+	 * - The value is an object.
+	 * - Dictionary values section exists.
+	 * - Dictionary values section is an object.
+	 * - Dictionary values section is not empty.
+	 *
+	 * Validation workflow:
+	 *
+	 * - Parse data type.
+	 * - Iterate all keys applying data type validation.
+	 * - Raise an error if data type is unsupported.
+	 * - If there were any resolved values, update the original object.
 	 *
 	 * The method will return `true` if there were no errors, or `false`.
 	 *
 	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
-	 * @param theSection {Object}: Data or array term section.
+	 * @param theKey {String|Number|null}: The key to the value in the container.
+	 * @param theSection {Object}: Dictionary value section.
 	 * @param theReportIndex {Number}: Container key for value, defaults to null.
 	 *
 	 * @return {Boolean}: `true` if valid, `false` if not.
 	 */
-	doValidateArray(
+	doValidateDictValues(
 		theContainer,
 		theKey,
 		theSection,
@@ -1174,204 +1443,28 @@ class Validator
 		///
 		// Init local storage.
 		///
+		let status = true
 		const value = (theKey !== null)
 			? theContainer[theKey]
 			: theContainer
 
 		///
-		// Check if array.
+		// Iterate dictionary object keys.
 		///
-		if(Validator.IsArray(value))
-		{
-			///
-			// Assert number of elements.
-			///
-			if(!this.checkArrayElements(
-				theContainer, theKey, theSection, theReportIndex
+		Object.keys(value).some( (key) => {
+			if(!this.doValidateDataSection(
+				value, key, theSection, theReportIndex
 			)) {
-				return false                                            // ==>
+				status = false
+				return true
 			}
 
-			///
-			// Iterate elements.
-			///
-			for(let i = 0; i < value.length; i++) {
-				if(!this.doValidateDataSection(
-					value, i, theSection, theReportIndex
-				)) {
-					return false                                        // ==>
-				}
-			}
+			return false
+		})
 
-			return true                                                 // ==>
+		return status                                                   // ==>
 
-		} // Is an array.
-
-		return this.setStatusReport(
-			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
-		)                                                               // ==>
-
-	} // doValidateArray()
-
-	/**
-	 * doValidateSet
-	 *
-	 * This method will check if the value is an array of unique values, and
-	 * then it will pass the value to a method that will validate the scalar
-	 * element value type.
-	 *
-	 * The method will return `true` if there were no errors, or `false`.
-	 *
-	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
-	 * @param theSection {Object}: Data or array term section.
-	 * @param theReportIndex {Number}: Container key for value, defaults to null.
-	 *
-	 * @return {Boolean}: `true` if valid, `false` if not.
-	 */
-	doValidateSet(
-		theContainer,
-		theKey,
-		theSection,
-		theReportIndex)
-	{
-		///
-		// Init local storage.
-		///
-		const value = (theKey !== null)
-			? theContainer[theKey]
-			: theContainer
-
-		///
-		// Check if array.
-		///
-		if(Validator.IsArray(value))
-		{
-			///
-			// Assert number of elements.
-			///
-			if(!this.checkArrayElements(
-				theContainer, theKey, theSection, theReportIndex
-			)) {
-				return false                                            // ==>
-			}
-
-			///
-			// Iterate elements.
-			///
-			for(let i = 0; i < value.length; i++) {
-				if(!this.doValidateSetSection(
-					value, i, theSection, theReportIndex
-				)) {
-					return false                                        // ==>
-				}
-			}
-
-			return true                                                 // ==>
-
-		} // Is an array.
-
-		return this.setStatusReport(
-			'kVALUE_NOT_AN_ARRAY', theKey, value, theReportIndex
-		)                                                               // ==>
-
-	} // doValidateSet()
-
-	/**
-	 * validateDict
-	 *
-	 * This method will check if the value is an object, and then it will pass
-	 * the keys and values to the dictionary validation method.
-	 *
-	 * The method will return `true` if there were no errors, or `false`.
-	 *
-	 * @param theContainer {Object}: The value container.
-	 * @param theKey {Object|Number|null}: The key to the value in the container.
-	 * @param theSection {Object}: Data or array term section.
-	 * @param theReportIndex {Number}: Container key for value, defaults to null.
-	 *
-	 * @return {Boolean}: `true` if valid, `false` if not.
-	 */
-	doValidateDict(
-		theContainer,
-		theKey,
-		theSection,
-		theReportIndex)
-	{
-		///
-		// Init local storage.
-		///
-		const value = (theKey !== null)
-			? theContainer[theKey]
-			: theContainer
-
-		///
-		// Assert value is an object.
-		///
-		if(Validator.IsObject(value))
-		{
-			///
-			// Assert dictionary key section exists.
-			///
-			if(!theSection.hasOwnProperty(module.context.configuration.sectionDictKey)) {
-				return this.setStatusReport(
-					'kMISSING_DICT_KEY_SECTION',
-					theKey, theSection, theReportIndex
-				)                                                       // ==>
-			}
-
-			///
-			// Assert section is an object.
-			///
-			if(!Validator.IsObject(theSection[module.context.configuration.sectionDictKey]))
-			{
-				return this.setStatusReport(
-					'kINVALID_DICT_KEY_SECTION',
-					theKey, theSection, theReportIndex
-				)                                                       // ==>
-			}
-
-			///
-			// Handle keys section.
-			///
-			if(Object.keys(theSection[module.context.configuration.sectionDictKey]).length !== 0)
-			{
-				///
-				// Check if section has type.
-				///
-				const section = theSection[module.context.configuration.sectionDictKey]
-				if(section.hasOwnProperty(module.context.configuration.keyScalarType))
-				{
-					if(!this.doValidateKeyScalar(
-						theContainer, theKey, section, theReportIndex
-					)) {
-						return false                                    // ==>
-					}
-
-				} else {
-					return this.setStatusReport(
-						'kINVALID_DICT_KEY_SECTION',
-						theKey, section, theReportIndex
-					)                                                   // ==>
-				}
-
-			} // Section is not empty.
-
-
-			///
-			// TODO: Validate dictionary values.
-			///
-
-
-			return true                                                 // ==>
-
-		} // Value is an object.
-
-		return this.setStatusReport(
-			'kNOT_AN_OBJECT', theKey, value, theReportIndex
-		)                                                               // ==>
-
-	} // doValidateDict()
+	} // doValidateDictValues()
 
 
 	/**
