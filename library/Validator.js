@@ -194,7 +194,6 @@ class Validator
 		this.useCache =  Boolean(doCache)
 		this.cacheMissing =  Boolean(doCacheMissing)
 		this.expectTerms =  Boolean(doOnlyTerms)
-		this.expectTerms =  Boolean(doOnlyTerms)
 		this.expectType = Boolean(doDataType)
 		this.defNamespace = Boolean(doDefaultNamespace)
 		this.resolver = resolveCode
