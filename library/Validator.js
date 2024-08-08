@@ -340,6 +340,13 @@ class Validator
 			)                                                           // ==>
 		}
 
+		///
+		// Handle provided descriptor.
+		///
+		return this.validateObject(
+			{ [this.term._key]: this.value }
+		)                                                               // ==>
+
 	} // validate()
 
 
